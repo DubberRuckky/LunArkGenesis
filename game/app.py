@@ -19,12 +19,14 @@ from game.constants import (
     INTERNAL_WIDTH,
     SCREEN_SETTINGS,
     SCREEN_SPLASH,
+    SCREEN_STARTUP,
     SCREEN_TITLE,
+    STARTUP_ENABLED,
 )
 from game.logic.settings import load_settings, save_settings
 from game.ui.display import Display, enable_dpi_awareness
 from game.ui.screens.settings_menu import SettingsScreen
-from game.ui.screens.splash import SplashScreen
+from game.ui.screens.startup import StartupScreen
 from game.ui.screens.title import TitleScreen
 
 # Configure basic console logger
@@ -60,13 +62,17 @@ class App:
         # Screen stack allows modals (like Settings) to overlay previous screens
         self.screen_stack: list[object] = []
         self.screen_registry: dict[str, type] = {
-            SCREEN_SPLASH: SplashScreen,
+            SCREEN_STARTUP: StartupScreen,
+            SCREEN_SPLASH: StartupScreen,
             SCREEN_TITLE: TitleScreen,
             SCREEN_SETTINGS: SettingsScreen,
         }
 
-        # Start with splash screen
-        self.set_screen(SCREEN_SPLASH)
+        # Start with startup sequence if enabled, otherwise straight to title screen
+        if STARTUP_ENABLED:
+            self.set_screen(SCREEN_STARTUP)
+        else:
+            self.set_screen(SCREEN_TITLE)
 
         # Clock & frame tracking
         self.clock = pygame.time.Clock()

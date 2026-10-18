@@ -1,0 +1,49 @@
+[
+  {
+    "id": "team",
+    "logo": "logo/logo.png",
+    "scale_mode": "integer",
+    "lines": [
+      {
+        "text": "LunArk: Genesis",
+        "size": 22,
+        "color": [255, 255, 255]
+      }
+    ]
+  },
+  {
+    "id": "art",
+    "logo": "logo/aseprite.png",
+    "scale_mode": "fit",
+    "fade_in": 0.3,
+    "hold": 1.2,
+    "fade_out": 0.3,
+    "lines": [
+      {
+        "text": "Art, made by humans,",
+        "size": 22,
+        "color": [255, 255, 255]
+      },
+      {
+        "text": "with Aseprite",
+        "size": 22,
+        "color": [255, 255, 255]
+      }
+    ]
+  },
+  {
+    "id": "engine",
+    "logo": "logo/pygame_ce.png",
+    "scale_mode": "fit",
+    "fade_in": 0.3,
+    "hold": 1.2,
+    "fade_out": 0.3,
+    "lines": [
+      {
+        "text": "Pygame CE",
+        "size": 22,
+        "color": [255, 255, 255]
+      }
+    ]
+  }
+]

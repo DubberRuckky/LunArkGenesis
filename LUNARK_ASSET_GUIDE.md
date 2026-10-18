@@ -13,6 +13,8 @@ Drop files directly into `img/` or `fonts/` at the exact paths below. The game w
 | Path | Description | Dimensions (px) | Format / Animation Notes |
 | :--- | :--- | :--- | :--- |
 | `img/logo/logo.png` | Splash screen logo | 33×33 | Scaled 3× using nearest-neighbor on splash screen |
+| `img/logo/aseprite.png` | Aseprite logo (Card 2) | max 120×72 | Scaled with aspect-preserving smoothscale fit |
+| `img/logo/pygame_ce.png` | Pygame CE logo (Card 3) | max 120×72 | Scaled with aspect-preserving smoothscale fit |
 | `img/ui/title.png` | Title wordmark logo | ~240×60 | Rendered centered on title screen |
 | `img/ui/title_bg.png` | Title background image | 480×270 | Fullscreen menu backdrop |
 | `img/ui/panel.png` | 9-slice panel frame | 24×24 | Corner size: 8px |

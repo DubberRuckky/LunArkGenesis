@@ -64,6 +64,8 @@ In *LunArk: Genesis*, you step into the boots of a lunar outpost commander estab
 
 | Input | Context | Action |
 | :--- | :--- | :--- |
+| **Any Key / Mouse Click** | Startup Sequence | Skip current logo card |
+| **Esc** | Startup Sequence | Skip entire sequence straight to Title Screen |
 | **Mouse Left-Click** | Menus & UI | Activate buttons, adjust toggles, cycle options |
 | **F11** | Everywhere | Toggle Fullscreen / Windowed mode immediately |
 | **F3** | Everywhere | Toggle Debug HUD (shows placeholder assets count & list) |
@@ -128,7 +130,7 @@ LunArkGenesis/
 ├── LUNARK_ASSET_GUIDE.md    # Specifications, sizes, and layout tables for pixel art
 ├── fonts/                   # Drop pixel.ttf here (default pygame font used if absent)
 ├── img/                     # Drop PNG sprites here (procedural fallbacks used if absent)
-│   ├── logo/                # 33x33 splash brand logo
+│   ├── logo/                # 33x33 brand logo, aseprite.png, pygame_ce.png
 │   ├── ui/                  # 9-slice panels, buttons, title banners, cursor
 │   ├── icons/               # 128x48 icon sheet (8 columns x 3 rows)
 │   ├── terrain/             # 128x48 terrain tileset (8 columns x 3 rows)
@@ -141,19 +143,22 @@ LunArkGenesis/
 │   └── vehicles/            # Lunar lander & rover sprites
 ├── saves/                   # Runtime saves (settings.json, savegame.json)
 ├── tests/                   # Pytest test suite for headless game rules
-│   └── test_settings.py     # Settings validation & persistence unit tests
+│   ├── test_settings.py     # Settings validation & persistence unit tests
+│   └── test_startup_sequence.py # Startup sequence timeline & alpha tests
 └── game/
     ├── __init__.py
     ├── app.py               # Main Pygame event loop & screen stack manager
     ├── constants.py         # Magic numbers, colors, paths, tile & icon index tables
     ├── assets.py            # AssetManager: loader, 9-slice, placeholders, fallback fonts
     ├── logic/               # Pure Python game mechanics (NO pygame imports allowed)
-    │   └── settings.py      # Settings schema, validation, file persistence
+    │   ├── settings.py      # Settings schema, validation, file persistence
+    │   └── startup_sequence.py # Pure-Python startup card timeline & alpha calculations
     ├── ui/                  # User interface presentation layer
     │   ├── display.py       # DPI awareness, canvas scaling, coordinate conversions
     │   ├── widgets.py       # Reusable components: Button, Toggle, Panel, etc.
-    │   └── screens/         # Screens: splash, title, settings_menu
-    └── data/                # Data-driven JSON game balance & definitions (Phase 2)
+    │   └── screens/         # Screens: startup, splash (alias), title, settings_menu
+    └── data/                # Data-driven JSON game balance & definitions
+        └── startup.json     # Declarative 3-card startup sequence definition
 ```
 
 ---
@@ -174,19 +179,20 @@ LunArkGenesis/
 +---------------------------------------------------------------+
           |                         |                   |
           v                         v                   v
-+------------------+      +------------------+  +---------------+
-| game.ui.display  |      |   Screen Stack   |  |game.assets    |
-| - DPI awareness  |      | - SplashScreen   |  | - Preloader   |
-| - Canvas scaling |      | - TitleScreen    |  | - 9-Slice UI  |
-| - Integer scale  |      | - SettingsScreen |  | - Fallbacks   |
-+------------------+      +------------------+  +---------------+
++------------------+      +--------------------+  +---------------+
+| game.ui.display  |      |    Screen Stack    |  |game.assets    |
+| - DPI awareness  |      | - StartupScreen    |  | - Preloader   |
+| - Canvas scaling |      | - TitleScreen      |  | - 9-Slice UI  |
+| - Integer scale  |      | - SettingsScreen   |  | - Fallbacks   |
++------------------+      +--------------------+  +---------------+
                                     |
                                     v
-                          +------------------+
-                          |   game.logic.*   |
-                          | (NO pygame here) |
-                          | - settings.py    |
-                          +------------------+
+                          +---------------------+
+                          |    game.logic.*     |
+                          |  (NO pygame here)   |
+                          | - settings.py       |
+                          | - startup_sequence  |
+                          +---------------------+
 ```
 
 ---
@@ -212,6 +218,35 @@ The default font is **Departure Mono** located at `fonts/DepartureMono-Regular.o
 2. Register the screen class in `game/app.py` inside `self.screen_registry`.
 3. Transition to it from any screen with `self.app.set_screen("myscreen")` or `self.app.push_screen("myscreen")`.
 
+### Startup Sequence & Card Customization
+
+On launch, the game presents a sequence of three introductory logo cards before transitioning to the Title Screen:
+1. **Team**: `img/logo/logo.png` with text "LunArk: Genesis" (size 22).
+2. **Art**: `img/logo/aseprite.png` with text "Art, made by humans," and "with Aseprite" (size 22).
+3. **Engine**: `img/logo/pygame_ce.png` with text "Pygame CE" (size 22).
+
+#### Timeline & Controls
+- **Card 1** uses the default splash timing (`SPLASH_FADE_IN_SECONDS` = 0.5s, `SPLASH_HOLD_SECONDS` = 1.5s, `SPLASH_FADE_OUT_SECONDS` = 1.0s).
+- **Cards 2 & 3** are brisk: fade in 0.3s, hold 1.2s, fade out 0.3s.
+- A black gap of 0.15s (`STARTUP_GAP_SECONDS`) separates cards.
+- **Any Key / Mouse Click**: Skips the currently active card immediately.
+- **Esc**: Skips the entire startup sequence straight to the Title Screen.
+- **F11 / F3**: Fullscreen and Debug Overlay remain operational at all times.
+
+#### Fast Developer Boot (`STARTUP_ENABLED`)
+To skip the startup cards during iterative testing, set:
+```python
+# game/constants.py
+STARTUP_ENABLED = False
+```
+When set to `False`, the game boots straight into the Title Screen.
+
+#### Configuration (`game/data/startup.json`)
+Card timing, paths, text lines, and scaling modes are defined in `game/data/startup.json`. If this file is missing or corrupted, the pure-Python state machine (`game/logic/startup_sequence.py`) automatically falls back to built-in defaults without crashing.
+- `scale_mode: "integer"`: Applies nearest-neighbor whole-multiplier upscaling for pixel-art assets (e.g. 33×33 logo scaled 3× to 99×99 inside a 120×72 box).
+- `scale_mode: "fit"`: Preserves native dimensions if within 120×72, or scales down with smoothscale while preserving aspect ratio.
+- Missing logo files fallback smoothly to centered text-only cards while logging a diagnostic warning to the F3 overlay.
+
 ---
 
 ## AI Disclosure
@@ -224,6 +259,14 @@ The default font is **Departure Mono** located at `fonts/DepartureMono-Regular.o
 ## Roadmap & Changelog
 
 ### Changelog
+- **Startup Sequence (3-Card Chain)**:
+  - Replaced single splash screen with a 3-card introductory sequence: Team (`logo.png`), Art (`aseprite.png`), and Engine (`pygame_ce.png`).
+  - Implemented pure-Python sequence timeline logic (`game/logic/startup_sequence.py`) with zero pygame dependencies.
+  - Added data-driven configuration (`game/data/startup.json`) with robust built-in fallbacks.
+  - Supported per-card scaling modes (`integer` for pixel art, `fit` for non-pixel logos up to 120×72 box).
+  - Added single-card skip (any key/click) and full-sequence skip (`Esc`).
+  - Added `STARTUP_ENABLED` toggle in `game/constants.py` for instant developer booting.
+  - Added comprehensive test suite (`tests/test_startup_sequence.py`) verifying hold times, overrides, jumps, and missing file fallbacks.
 - **Typography Update (Departure Mono)**:
   - Integrated Departure Mono by Helena Zhang (`fonts/DepartureMono-Regular.otf`) under SIL Open Font License 1.1.
   - Implemented the strict multiple-of-11 rule (sizes 11, 22, 33) across all UI elements.
@@ -250,6 +293,9 @@ The default font is **Departure Mono** located at `fonts/DepartureMono-Regular.o
 ### Credits
 - **Game Design & Pixel Art**: LunArk Team (created with Aseprite).
 - **Font**: **Departure Mono** by Helena Zhang ([https://departuremono.com](https://departuremono.com)), licensed under the **SIL Open Font License 1.1**. Font files and license text are preserved in `fonts/`. Designed on an 11 px grid; strictly rendered in multiples of 11 (11, 22, 33) with antialiasing disabled for authentic pixel-art fidelity.
+- **Third-Party Logos**:
+  - **Aseprite**: The Aseprite logo and wordmark are trademarks of Igara Studio S.A. Used for artistic tooling attribution.
+  - **Pygame Community Edition (Pygame-CE)**: The Pygame-CE logo is maintained by the Pygame Community Edition project. Used for engine attribution.
 
 ### License
 Created for the **NASA Space Apps Challenge 2026**.

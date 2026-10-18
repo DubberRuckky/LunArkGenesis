@@ -238,6 +238,8 @@ class AssetManager:
         # Expected dimensions for key placeholders when files are absent
         known_sizes: dict[str, tuple[int, int]] = {
             "logo": (33, 33),
+            "logo_aseprite": (120, 72),
+            "logo_pygame_ce": (120, 72),
             "title": (240, 60),
             "title_bg": (480, 270),
             "panel": (24, 24),

@@ -19,6 +19,7 @@ DATA_DIR: Path = ROOT_DIR / "game" / "data"
 
 SETTINGS_FILE: Path = SAVE_DIR / "settings.json"
 SAVEGAME_FILE: Path = SAVE_DIR / "savegame.json"
+STARTUP_FILE: Path = DATA_DIR / "startup.json"
 
 # Font: Departure Mono by Helena Zhang (SIL Open Font License 1.1)
 # Designed on an 11 px grid. For pixel-perfect rendering with crisp, unblurred edges,
@@ -64,6 +65,10 @@ SURFACE_ROW: int = 10  # Row index where ground surface sits in the world
 SPLASH_FADE_IN: float = 0.5
 SPLASH_HOLD: float = 1.5
 SPLASH_FADE_OUT: float = 1.0
+
+# Startup sequence configuration
+STARTUP_ENABLED: bool = True  # If False, skips straight to Title screen for fast dev
+STARTUP_GAP_SECONDS: float = 0.15  # Black gap between consecutive startup cards
 
 SETTINGS_REVERT_SECONDS: int = 10
 
@@ -221,6 +226,8 @@ BUILDING_CATEGORIES: list[str] = [
 ASSET_PATHS: dict[str, str] = {
     # Logo
     "logo": "logo/logo.png",
+    "logo_aseprite": "logo/aseprite.png",
+    "logo_pygame_ce": "logo/pygame_ce.png",
     # UI
     "title": "ui/title.png",
     "title_bg": "ui/title_bg.png",
@@ -273,7 +280,8 @@ MAX_PLAYER_NAME_LENGTH: int = 12
 DEFAULT_PLAYER_NAME: str = "Commander"
 
 # Screen identifiers for Screen Manager
-SCREEN_SPLASH: str = "splash"
+SCREEN_STARTUP: str = "startup"
+SCREEN_SPLASH: str = "startup"  # Alias for backward compatibility
 SCREEN_TITLE: str = "title"
 SCREEN_SETTINGS: str = "settings"
 SCREEN_CUTSCENE: str = "cutscene"
