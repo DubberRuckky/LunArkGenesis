@@ -1,6 +1,9 @@
 # LunArk: Genesis
 
-![image](https://github.com/DubberRuckky/LunArkGenesis/blob/main/img/logo/logo.png)
+<p align="center">
+  <img src="https://github.com/DubberRuckky/LunArkGenesis/blob/main/img/logo/logo.png" width="512" height="512" alt="Logo">
+</p>
+
 
 > A retro pixel-art lunar outpost management simulator for ages 13–16, built for the **NASA Space Apps Challenge 2026**.
 
