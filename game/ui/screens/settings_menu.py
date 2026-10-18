@@ -68,15 +68,15 @@ class SettingsScreen:
 
         # Container panel layout
         panel_w = 340
-        panel_h = 220
+        panel_h = 246
         panel_x = (INTERNAL_WIDTH - panel_w) // 2
         panel_y = (INTERNAL_HEIGHT - panel_h) // 2
         self.panel = Panel(panel_x, panel_y, panel_w, panel_h)
 
         row_x = panel_x + 18
         row_w = panel_w - 36
-        start_y = panel_y + 34
-        line_step = 22
+        start_y = panel_y + 46
+        line_step = 28
 
         # 1. Display mode selector
         self.mode_selector = OptionSelector(
@@ -148,8 +148,8 @@ class SettingsScreen:
 
         # Action buttons
         btn_y = panel_y + panel_h - 26
-        btn_w = 64
-        btn_h = 16
+        btn_w = 56
+        btn_h = 18
 
         self.btn_apply = Button(
             panel_x + 18,
@@ -163,7 +163,7 @@ class SettingsScreen:
         self.btn_reset = Button(
             panel_x + 18 + btn_w + 8,
             btn_y,
-            btn_w + 14,
+            btn_w + 48,
             btn_h,
             "Reset Defaults",
             self.font,
@@ -187,7 +187,7 @@ class SettingsScreen:
         self.modal_rect = pygame.Rect(modal_x, modal_y, modal_w, modal_h)
 
         self.btn_keep = Button(
-            modal_x + 30,
+            modal_x + 24,
             modal_y + 64,
             80,
             18,
@@ -196,9 +196,9 @@ class SettingsScreen:
             callback=self._confirm_keep,
         )
         self.btn_revert = Button(
-            modal_x + modal_w - 110,
+            modal_x + modal_w - 94 - 24,
             modal_y + 64,
-            80,
+            94,
             18,
             "Revert Now",
             self.font,
@@ -359,7 +359,7 @@ class SettingsScreen:
 
         # Header Title
         title_surf = self.header_font.render("Settings", False, COLOR_WHITE)
-        surface.blit(title_surf, (self.panel.rect.x + 18, self.panel.rect.y + 12))
+        surface.blit(title_surf, (self.panel.rect.x + 18, self.panel.rect.y + 10))
 
         # Rows
         self.mode_selector.draw(surface)

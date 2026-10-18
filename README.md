@@ -204,8 +204,8 @@ python -m pytest tests/ -v
 2. Save your PNG file in the matching path in `img/`.
 3. Launch the game — it will immediately use your real art instead of the procedural placeholder!
 
-### How to Add a Custom Font
-Drop your TrueType font into `fonts/pixel.ttf`. The game will automatically detect and load it on next launch.
+#### How to Add or Change Fonts
+The default font is **Departure Mono** located at `fonts/DepartureMono-Regular.otf`. To customize or replace it, keep the multiple-of-11 rule in mind (multiples of 11 ensure pixel-perfect rendering without antialiasing blur).
 
 ### How to Add a New Screen
 1. Create `game/ui/screens/myscreen.py` with `handle_events`, `update(dt)`, and `draw(surface)`.
@@ -224,6 +224,13 @@ Drop your TrueType font into `fonts/pixel.ttf`. The game will automatically dete
 ## Roadmap & Changelog
 
 ### Changelog
+- **Typography Update (Departure Mono)**:
+  - Integrated Departure Mono by Helena Zhang (`fonts/DepartureMono-Regular.otf`) under SIL Open Font License 1.1.
+  - Implemented the strict multiple-of-11 rule (sizes 11, 22, 33) across all UI elements.
+  - Expanded settings menu container (`panel_h = 246`, `line_step = 28`, `start_y = panel_y + 46`, header at `panel_y + 10`).
+  - Adjusted Reset Defaults button width (`btn_w + 48`), OptionSelector note alignment (`rect.y + 14`), and modal button margins.
+  - Restructured F3 debug overlay to use 14 px row increments to eliminate text crowding.
+  - Verified layout across all screens headlessly via 2x resolution captures.
 - **Phase 1 (Completed)**:
   - Scaffolding, pinned dependencies (`pygame-ce==2.5.8`), strict directory layout.
   - Windows DPI-awareness and nearest-neighbor 480×270 canvas scaling with integer scaling support.
@@ -239,5 +246,11 @@ Drop your TrueType font into `fonts/pixel.ttf`. The game will automatically dete
 ---
 
 ## Credits & License
+
+### Credits
+- **Game Design & Pixel Art**: LunArk Team (created with Aseprite).
+- **Font**: **Departure Mono** by Helena Zhang ([https://departuremono.com](https://departuremono.com)), licensed under the **SIL Open Font License 1.1**. Font files and license text are preserved in `fonts/`. Designed on an 11 px grid; strictly rendered in multiples of 11 (11, 22, 33) with antialiasing disabled for authentic pixel-art fidelity.
+
+### License
 Created for the **NASA Space Apps Challenge 2026**.
 Released under the **GNU General Public License v3.0** (`GPL-3.0`).

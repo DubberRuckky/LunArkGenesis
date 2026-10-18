@@ -174,12 +174,13 @@ class Toggle:
         self.value = value
         self.callback = callback
 
-        self.pill_rect = pygame.Rect(self.x, self.y, 24, 12)
+        self.pill_rect = pygame.Rect(self.x, self.y + 1, 24, 12)
         self.text_surf = self.font.render(self.label_text, False, COLOR_BUTTON_TEXT)
 
     def update(self, events: list[pygame.event.Event], mouse_pos: tuple[int, int]) -> None:
         """Toggle value on click over the pill or label."""
-        hit_rect = pygame.Rect(self.x, self.y, 24 + 6 + self.text_surf.get_width(), 12)
+        hit_h = max(14, self.text_surf.get_height())
+        hit_rect = pygame.Rect(self.x, self.y, 24 + 6 + self.text_surf.get_width(), hit_h)
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if hit_rect.collidepoint(mouse_pos):
@@ -198,8 +199,8 @@ class Toggle:
         knob_rect = pygame.Rect(knob_x, self.pill_rect.top + 1, 10, 10)
         pygame.draw.ellipse(surface, COLOR_TOGGLE_KNOB, knob_rect)
 
-        # Label text
-        surface.blit(self.text_surf, (self.pill_rect.right + 6, self.y + 1))
+        # Label text vertically aligned with pill center
+        surface.blit(self.text_surf, (self.pill_rect.right + 6, self.y))
 
 
 class OptionSelector:
@@ -289,7 +290,7 @@ class OptionSelector:
         # Render disabled explanatory note if provided
         if not self.enabled and self.note:
             note_surf = self.font.render(self.note, False, (140, 140, 150))
-            surface.blit(note_surf, (self.rect.x, self.rect.y + 16))
+            surface.blit(note_surf, (self.rect.x, self.rect.y + 14))
 
 
 class ProgressBar:

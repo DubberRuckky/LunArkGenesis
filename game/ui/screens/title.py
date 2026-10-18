@@ -161,4 +161,4 @@ class TitleScreen:
 
         # Version stamp
         ver_surf = self.font.render("v0.1.0-alpha", False, (80, 85, 100))
-        surface.blit(ver_surf, (6, INTERNAL_HEIGHT - 14))
+        surface.blit(ver_surf, (6, INTERNAL_HEIGHT - 18))

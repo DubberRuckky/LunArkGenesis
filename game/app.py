@@ -202,22 +202,26 @@ class App:
         # F3 Debug HUD
         if self.show_f3_debug:
             missing_list = assets.get_placeholder_list()
-            hud_h = min(120, 16 + len(missing_list) * 10)
-            overlay_surf = pygame.Surface((220, hud_h), pygame.SRCALPHA)
+            item_h = 14
+            max_items = 10
+            num_shown = min(max_items, len(missing_list))
+            total_rows = 1 + num_shown + (1 if len(missing_list) > max_items else 0)
+            hud_h = 8 + total_rows * item_h
+            overlay_surf = pygame.Surface((250, hud_h), pygame.SRCALPHA)
             overlay_surf.fill((10, 10, 20, 230))
             pygame.draw.rect(overlay_surf, (80, 180, 255), overlay_surf.get_rect(), 1)
 
             title = self.small_font.render(f"F3 DEBUG - Placeholders ({len(missing_list)})", False, (80, 180, 255))
             overlay_surf.blit(title, (4, 4))
 
-            y = 16
-            for key in missing_list[:10]:
+            y = 4 + item_h
+            for key in missing_list[:max_items]:
                 item_txt = self.small_font.render(f"- {key}", False, COLOR_WHITE)
                 overlay_surf.blit(item_txt, (6, y))
-                y += 10
+                y += item_h
 
-            if len(missing_list) > 10:
-                more_txt = self.small_font.render(f"...and {len(missing_list) - 10} more", False, (180, 180, 180))
+            if len(missing_list) > max_items:
+                more_txt = self.small_font.render(f"...and {len(missing_list) - max_items} more", False, (180, 180, 180))
                 overlay_surf.blit(more_txt, (6, y))
 
             surface.blit(overlay_surf, (4, 4))

@@ -221,6 +221,7 @@ __marimo__/
 
 # LunArk: Genesis
 saves/
+screenshots/
 .DS_Store
 Thumbs.db
 desktop.ini

@@ -41,7 +41,7 @@ Drop files directly into `img/` or `fonts/` at the exact paths below. The game w
 | `img/fx/dust_puff.png` | Construction dust puff | 128×16 | 4 frames (32×16 each) |
 | `img/vehicles/lander.png` | Resupply cargo lander | 48×32 | Resupply animation |
 | `img/vehicles/rover.png` | Lunar surface rover | 32×16 | Surface exploration |
-| `fonts/pixel.ttf` | Custom TTF pixel font | Vector TTF | Scaled at sizes 8, 10, 16, 24 |
+| `fonts/DepartureMono-Regular.otf` | Departure Mono pixel font | OpenType OTF | Scaled strictly at multiples of 11 (11, 22, 33) |
 
 ---
 

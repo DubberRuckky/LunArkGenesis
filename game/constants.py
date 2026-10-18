@@ -20,12 +20,15 @@ DATA_DIR: Path = ROOT_DIR / "game" / "data"
 SETTINGS_FILE: Path = SAVE_DIR / "settings.json"
 SAVEGAME_FILE: Path = SAVE_DIR / "savegame.json"
 
-# Font
-FONT_NAME: str = "pixel.ttf"
-FONT_SIZE_SMALL: int = 8
-FONT_SIZE_MEDIUM: int = 10
-FONT_SIZE_LARGE: int = 16
-FONT_SIZE_TITLE: int = 24
+# Font: Departure Mono by Helena Zhang (SIL Open Font License 1.1)
+# Designed on an 11 px grid. For pixel-perfect rendering with crisp, unblurred edges,
+# ONLY use sizes that are integer multiples of 11 (11, 22, 33). At size 11, each glyph
+# is 7 px wide and ~14 px tall (capitals 8 px high). Antialiasing is always False.
+FONT_NAME: str = "DepartureMono-Regular.otf"
+FONT_SIZE_SMALL: int = 11
+FONT_SIZE_MEDIUM: int = 11
+FONT_SIZE_LARGE: int = 22
+FONT_SIZE_TITLE: int = 33
 
 # ---------------------------------------------------------------------------
 # Display & Canvas
