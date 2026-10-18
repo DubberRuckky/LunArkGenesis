@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# LunArk: Genesis
+saves/
+.DS_Store
+Thumbs.db
+desktop.ini
