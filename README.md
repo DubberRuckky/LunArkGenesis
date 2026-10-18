@@ -1,5 +1,7 @@
 # LunArk: Genesis
 
+![image](https://github.com/DubberRuckky/LunArkGenesis/blob/main/img/logo/logo.png)
+
 > A retro pixel-art lunar outpost management simulator for ages 13–16, built for the **NASA Space Apps Challenge 2026**.
 
 In *LunArk: Genesis*, you step into the boots of a lunar outpost commander establishing humanity's permanent foothold on the Moon. Experience real astronautical engineering trade-offs: surviving the 14-Earth-day lunar night, shielding crews from solar cosmic radiation using regolith depth, balancing life support against research milestones, and managing crew boredom before morale collapses.
