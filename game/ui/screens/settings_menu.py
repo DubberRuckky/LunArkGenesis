@@ -1,8 +1,8 @@
 # AI-assisted: written with Google Antigravity. Reviewed by the LunArk team.
-"""Settings menu screen with auto-revert display confirmation.
+"""Settings menu screen with restart confirmation modal.
 
 Allows tuning display mode, resolution, FPS cap, VSync, integer scaling,
-and performance metrics, protecting players with a 10s safety revert countdown.
+and performance metrics. Display changes take effect upon application restart.
 """
 
 from copy import deepcopy
@@ -11,21 +11,20 @@ import pygame
 from game.assets import assets
 from game.constants import (
     COLOR_BLACK,
+    COLOR_ERROR,
     COLOR_PANEL_BG,
     COLOR_PANEL_BORDER,
+    COLOR_REMINDER,
     COLOR_WHITE,
     FONT_SIZE_LARGE,
     FONT_SIZE_MEDIUM,
     FPS_OPTIONS,
     INTERNAL_HEIGHT,
     INTERNAL_WIDTH,
-    SETTINGS_REVERT_SECONDS,
 )
 from game.logic.settings import (
     get_defaults,
-    needs_display_change,
-    save_settings,
-    settings_changed,
+    needs_restart,
     validate_settings,
 )
 from game.ui.widgets import Button, OptionSelector, Panel, Toggle
@@ -39,14 +38,13 @@ class SettingsScreen:
         self.font = assets.get_font(FONT_SIZE_MEDIUM)
         self.header_font = assets.get_font(FONT_SIZE_LARGE)
 
-        # Working copy of settings
-        self.current_settings = deepcopy(self.app.settings)  # type: ignore[attr-defined]
-        self.pending_settings = deepcopy(self.current_settings)
+        # Open with SAVED settings (what will happen after restart)
+        self.saved_settings = deepcopy(self.app.saved_settings)  # type: ignore[attr-defined]
+        self.pending_settings = deepcopy(self.saved_settings)
 
-        # Revert confirmation modal state
-        self.reverting_active: bool = False
-        self.revert_timer: float = float(SETTINGS_REVERT_SECONDS)
-        self.backup_settings: dict | None = None
+        # Restart confirmation modal state
+        self.modal_active: bool = False
+        self.modal_error: str | None = None
 
         # Gather resolutions that fit desktop
         available_tuples = self.app.display.get_available_resolutions()  # type: ignore[attr-defined]
@@ -179,30 +177,38 @@ class SettingsScreen:
             callback=self._on_back,
         )
 
-        # Revert confirmation modal buttons
-        modal_w = 260
-        modal_h = 100
+        # Restart confirmation modal layout
+        modal_w = 350
+        modal_h = 104
         modal_x = (INTERNAL_WIDTH - modal_w) // 2
         modal_y = (INTERNAL_HEIGHT - modal_h) // 2
         self.modal_rect = pygame.Rect(modal_x, modal_y, modal_w, modal_h)
 
-        self.btn_keep = Button(
-            modal_x + 24,
-            modal_y + 64,
-            80,
-            18,
-            "Keep",
+        # Modal buttons: Restart Now (width 100), Later (width 64)
+        btn_restart_w = 100
+        btn_later_w = 64
+        btn_gap = 16
+        total_btn_w = btn_restart_w + btn_gap + btn_later_w
+        modal_btn_x = modal_x + (modal_w - total_btn_w) // 2
+        modal_btn_y = modal_y + 70
+
+        self.btn_restart_now = Button(
+            modal_btn_x,
+            modal_btn_y,
+            btn_restart_w,
+            20,
+            "Restart Now",
             self.font,
-            callback=self._confirm_keep,
+            callback=self._on_restart_now,
         )
-        self.btn_revert = Button(
-            modal_x + modal_w - 94 - 24,
-            modal_y + 64,
-            94,
-            18,
-            "Revert Now",
+        self.btn_later = Button(
+            modal_btn_x + btn_restart_w + btn_gap,
+            modal_btn_y,
+            btn_later_w,
+            20,
+            "Later",
             self.font,
-            callback=self._confirm_revert,
+            callback=self._on_later,
         )
 
     # -----------------------------------------------------------------------
@@ -235,55 +241,39 @@ class SettingsScreen:
         """Reset pending controls to default settings values."""
         defaults = get_defaults()
         self.pending_settings = deepcopy(defaults)
-        self.mode_selector.set_index(0 if defaults["fullscreen"] else 1)
-        self.res_selector.set_enabled(not defaults["fullscreen"])
-
-        cur_res = tuple(defaults["resolution"])
-        if cur_res in self.res_tuples:
-            self.res_selector.set_index(self.res_tuples.index(cur_res))
-
-        cur_fps = defaults["fps_cap"]
-        if cur_fps in self.fps_values:
-            self.fps_selector.set_index(self.fps_values.index(cur_fps))
-
-        self.toggle_vsync.value = defaults["vsync"]
-        self.toggle_show_fps.value = defaults["show_fps"]
-        self.toggle_int_scale.value = defaults["integer_scaling"]
+        self._sync_widgets_from_settings(self.pending_settings)
 
     def _on_apply(self) -> None:
-        """Apply changes. Triggers auto-revert modal if display mode changed."""
-        cleaned = validate_settings(self.pending_settings, self.res_tuples)
+        """Validate, apply live settings, and save. Open modal if restart needed."""
+        cleaned = validate_settings(
+            self.pending_settings,
+            available_resolutions=self.res_tuples,
+            extra_resolutions=self.app.desktop_size,  # type: ignore[attr-defined]
+        )
         self.pending_settings = cleaned
 
-        if settings_changed(self.current_settings, self.pending_settings):
-            # Display mode/resolution/scaling changed -> engage confirmation timer
-            self.backup_settings = deepcopy(self.current_settings)
-            self.revert_timer = float(SETTINGS_REVERT_SECONDS)
-            self.reverting_active = True
+        # Apply live settings and save all settings to disk
+        self.app.apply_saved_settings(self.pending_settings)  # type: ignore[attr-defined]
+        self.saved_settings = deepcopy(self.pending_settings)
 
-            # Apply test mode to window
-            self.app.apply_settings(self.pending_settings, save_to_disk=False)  # type: ignore[attr-defined]
-            self.current_settings = deepcopy(self.pending_settings)
+        # If any restart-needed setting differs from running game, show modal
+        if needs_restart(self.app.running_settings, self.saved_settings):  # type: ignore[attr-defined]
+            self.modal_active = True
+            self.modal_error = None
         else:
-            # Only non-display settings changed (FPS cap, Show FPS, etc.)
-            self.current_settings = deepcopy(self.pending_settings)
-            self.app.apply_settings(self.current_settings, save_to_disk=True)  # type: ignore[attr-defined]
+            self.modal_active = False
+            self.modal_error = None
 
-    def _confirm_keep(self) -> None:
-        """User clicked Keep: save settings permanently and dismiss modal."""
-        self.reverting_active = False
-        save_settings(self.current_settings)
-        self.backup_settings = None
+    def _on_restart_now(self) -> None:
+        """Attempt to launch a new copy of the game and terminate this process."""
+        success = self.app.restart_game()  # type: ignore[attr-defined]
+        if not success:
+            self.modal_error = "Restart failed. Please start the game again."
 
-    def _confirm_revert(self) -> None:
-        """Revert window to previous backup settings."""
-        self.reverting_active = False
-        if self.backup_settings:
-            self.current_settings = deepcopy(self.backup_settings)
-            self.pending_settings = deepcopy(self.backup_settings)
-            self.app.apply_settings(self.current_settings, save_to_disk=True)  # type: ignore[attr-defined]
-            self._sync_widgets_from_settings(self.current_settings)
-            self.backup_settings = None
+    def _on_later(self) -> None:
+        """Dismiss the modal; pending restart changes apply on next launch."""
+        self.modal_active = False
+        self.modal_error = None
 
     def _sync_widgets_from_settings(self, st: dict) -> None:
         """Sync UI controls with settings dict values."""
@@ -301,8 +291,6 @@ class SettingsScreen:
 
     def _on_back(self) -> None:
         """Return to previous screen (Title or Pause)."""
-        if self.reverting_active:
-            self._confirm_revert()
         self.app.pop_screen()  # type: ignore[attr-defined]
 
     # -----------------------------------------------------------------------
@@ -313,15 +301,19 @@ class SettingsScreen:
         """Route input events to modal or main settings controls."""
         mouse_pos = self.app.get_canvas_mouse_pos()  # type: ignore[attr-defined]
 
-        # Handle ESC key: go back
+        # Handle ESC key: Later if modal active, otherwise Back
         for event in events:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self._on_back()
+                if self.modal_active:
+                    self._on_later()
+                else:
+                    self._on_back()
                 return
 
-        if self.reverting_active:
-            self.btn_keep.update(events, mouse_pos)
-            self.btn_revert.update(events, mouse_pos)
+        # Modal interaction blocks background settings controls
+        if self.modal_active:
+            self.btn_restart_now.update(events, mouse_pos)
+            self.btn_later.update(events, mouse_pos)
             return
 
         # Main settings interaction
@@ -337,11 +329,14 @@ class SettingsScreen:
         self.btn_back.update(events, mouse_pos)
 
     def update(self, dt: float) -> None:
-        """Tick auto-revert safety countdown."""
-        if self.reverting_active:
-            self.revert_timer -= dt
-            if self.revert_timer <= 0.0:
-                self._confirm_revert()
+        """Update settings screen state."""
+        # Sync fullscreen control if F11 toggled it externally
+        fs_saved = self.app.saved_settings.get("fullscreen", True)  # type: ignore[attr-defined]
+        if self.saved_settings.get("fullscreen") != fs_saved:
+            self.saved_settings["fullscreen"] = fs_saved
+            self.pending_settings["fullscreen"] = fs_saved
+            self.mode_selector.set_index(0 if fs_saved else 1)
+            self.res_selector.set_enabled(not fs_saved)
 
     # -----------------------------------------------------------------------
     # Rendering
@@ -361,6 +356,12 @@ class SettingsScreen:
         title_surf = self.header_font.render("Settings", False, COLOR_WHITE)
         surface.blit(title_surf, (self.panel.rect.x + 18, self.panel.rect.y + 10))
 
+        # Orange restart reminder in header if restart is pending
+        if self.app.is_restart_pending():  # type: ignore[attr-defined]
+            rem_surf = self.font.render("Restart to apply", False, COLOR_REMINDER)
+            rem_x = self.panel.rect.right - 18 - rem_surf.get_width()
+            surface.blit(rem_surf, (rem_x, self.panel.rect.y + 16))
+
         # Rows
         self.mode_selector.draw(surface)
         self.res_selector.draw(surface)
@@ -374,8 +375,8 @@ class SettingsScreen:
         self.btn_reset.draw(surface)
         self.btn_back.draw(surface)
 
-        # Draw Confirmation Modal Overlay if active
-        if self.reverting_active:
+        # Draw Restart Required Modal Overlay if active
+        if self.modal_active:
             # Heavy darken curtain behind modal
             m_curtain = pygame.Surface((INTERNAL_WIDTH, INTERNAL_HEIGHT), pygame.SRCALPHA)
             m_curtain.fill((0, 0, 0, 200))
@@ -387,13 +388,18 @@ class SettingsScreen:
             pygame.draw.rect(modal_surf, COLOR_PANEL_BORDER, modal_surf.get_rect(), 1, border_radius=4)
             surface.blit(modal_surf, self.modal_rect.topleft)
 
-            # Warning text & countdown
-            msg_1 = "Keep these display settings?"
-            msg_2 = f"Reverting in {max(0, int(self.revert_timer + 0.9))}s..."
-            t1 = self.font.render(msg_1, False, COLOR_WHITE)
-            t2 = self.font.render(msg_2, False, (255, 200, 80))
-            surface.blit(t1, t1.get_rect(center=(self.modal_rect.centerx, self.modal_rect.y + 20)))
-            surface.blit(t2, t2.get_rect(center=(self.modal_rect.centerx, self.modal_rect.y + 40)))
+            # Modal Title
+            t_title = self.font.render("Restart required", False, COLOR_WHITE)
+            surface.blit(t_title, t_title.get_rect(center=(self.modal_rect.centerx, self.modal_rect.y + 16)))
 
-            self.btn_keep.draw(surface)
-            self.btn_revert.draw(surface)
+            # Message
+            t_msg = self.font.render("Display changes need a restart to take effect.", False, (220, 220, 230))
+            surface.blit(t_msg, t_msg.get_rect(center=(self.modal_rect.centerx, self.modal_rect.y + 36)))
+
+            # Error message if restart failed
+            if self.modal_error:
+                t_err = self.font.render(self.modal_error, False, COLOR_ERROR)
+                surface.blit(t_err, t_err.get_rect(center=(self.modal_rect.centerx, self.modal_rect.y + 53)))
+
+            self.btn_restart_now.draw(surface)
+            self.btn_later.draw(surface)

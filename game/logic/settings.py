@@ -34,6 +34,10 @@ DEFAULTS: dict[str, Any] = {
     "integer_scaling": True,
 }
 
+# Settings grouped by application lifecycle
+LIVE_KEYS: tuple[str, ...] = ("fps_cap", "show_fps")
+RESTART_KEYS: tuple[str, ...] = ("fullscreen", "resolution", "integer_scaling", "vsync")
+
 
 def get_defaults() -> dict[str, Any]:
     """Return an isolated deep copy of the default settings dict.
@@ -44,9 +48,44 @@ def get_defaults() -> dict[str, Any]:
     return deepcopy(DEFAULTS)
 
 
+def get_allowed_resolutions(
+    extra_resolutions: list[tuple[int, int]] | tuple[int, int] | None = None,
+) -> list[tuple[int, int]]:
+    """Build the list of allowed resolutions, combining predefined with any extras.
+
+    Args:
+        extra_resolutions: Optional tuple (w, h) or list of tuples representing
+            additional supported resolutions (such as primary desktop resolution).
+
+    Returns:
+        list[tuple[int, int]]: Full list of allowed (w, h) resolution tuples.
+    """
+    resolutions = list(AVAILABLE_RESOLUTIONS)
+    if extra_resolutions is not None:
+        if (
+            isinstance(extra_resolutions, tuple)
+            and len(extra_resolutions) == 2
+            and isinstance(extra_resolutions[0], int)
+        ):
+            extras = [extra_resolutions]
+        else:
+            extras = list(extra_resolutions)  # type: ignore[arg-type]
+
+        for item in extras:
+            if isinstance(item, (tuple, list)) and len(item) == 2:
+                try:
+                    w, h = int(item[0]), int(item[1])
+                    if w > 0 and h > 0 and (w, h) not in resolutions:
+                        resolutions.append((w, h))
+                except (ValueError, TypeError):
+                    continue
+    return resolutions
+
+
 def validate_settings(
     settings: dict[str, Any],
     available_resolutions: list[tuple[int, int]] | None = None,
+    extra_resolutions: list[tuple[int, int]] | tuple[int, int] | None = None,
 ) -> dict[str, Any]:
     """Validate and sanitize a settings dictionary against allowed values.
 
@@ -55,14 +94,24 @@ def validate_settings(
 
     Args:
         settings: Raw dictionary of settings.
-        available_resolutions: Optional list of supported (w, h) tuples.
+        available_resolutions: Optional explicit list of supported (w, h) tuples.
+        extra_resolutions: Optional additional resolutions (e.g. desktop size)
+            to accept alongside standard options.
 
     Returns:
         dict[str, Any]: Cleaned and validated settings dictionary.
     """
     defaults = get_defaults()
     cleaned: dict[str, Any] = {}
-    allowed_resolutions = available_resolutions or AVAILABLE_RESOLUTIONS
+
+    if available_resolutions is not None:
+        allowed_resolutions = list(available_resolutions)
+        if extra_resolutions is not None:
+            for r in get_allowed_resolutions(extra_resolutions):
+                if r not in allowed_resolutions:
+                    allowed_resolutions.append(r)
+    else:
+        allowed_resolutions = get_allowed_resolutions(extra_resolutions)
 
     # 1. Fullscreen
     val = settings.get("fullscreen")
@@ -127,11 +176,15 @@ def validate_settings(
     return cleaned
 
 
-def load_settings(path: Path | None = None) -> dict[str, Any]:
+def load_settings(
+    path: Path | None = None,
+    extra_resolutions: list[tuple[int, int]] | tuple[int, int] | None = None,
+) -> dict[str, Any]:
     """Load settings from JSON file. If missing or corrupt, fall back to defaults.
 
     Args:
         path: Optional file path. Defaults to constants.SETTINGS_FILE.
+        extra_resolutions: Optional extra resolutions (e.g. desktop resolution).
 
     Returns:
         dict[str, Any]: Validated settings dictionary.
@@ -147,18 +200,23 @@ def load_settings(path: Path | None = None) -> dict[str, Any]:
         if not isinstance(data, dict):
             logger.warning("Settings JSON content is not an object. Reverting to defaults.")
             return get_defaults()
-        return validate_settings(data)
+        return validate_settings(data, extra_resolutions=extra_resolutions)
     except Exception as exc:
         logger.warning("Failed to parse settings file %s: %s. Using defaults.", target_path, exc)
         return get_defaults()
 
 
-def save_settings(settings: dict[str, Any], path: Path | None = None) -> bool:
+def save_settings(
+    settings: dict[str, Any],
+    path: Path | None = None,
+    extra_resolutions: list[tuple[int, int]] | tuple[int, int] | None = None,
+) -> bool:
     """Save settings dictionary to JSON file, creating directory if needed.
 
     Args:
         settings: Validated settings to save.
         path: Optional file path. Defaults to constants.SETTINGS_FILE.
+        extra_resolutions: Optional extra resolutions (e.g. desktop resolution).
 
     Returns:
         bool: True on success, False otherwise.
@@ -166,7 +224,7 @@ def save_settings(settings: dict[str, Any], path: Path | None = None) -> bool:
     target_path = path or SETTINGS_FILE
     try:
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        cleaned = validate_settings(settings)
+        cleaned = validate_settings(settings, extra_resolutions=extra_resolutions)
         with open(target_path, "w", encoding="utf-8") as f:
             json.dump(cleaned, f, indent=2)
         return True
@@ -175,10 +233,49 @@ def save_settings(settings: dict[str, Any], path: Path | None = None) -> bool:
         return False
 
 
+def changed_restart_keys(running: dict[str, Any], saved: dict[str, Any]) -> list[str]:
+    """Return list of restart-needed setting keys that differ between running and saved.
+
+    Resolution is normalized to a tuple so that a list and a tuple of the same size
+    count as equal.
+
+    Args:
+        running: Running settings dictionary.
+        saved: Saved settings dictionary.
+
+    Returns:
+        list[str]: Names of keys requiring an application restart.
+    """
+    changed: list[str] = []
+    for key in RESTART_KEYS:
+        if key == "resolution":
+            run_res = tuple(running.get("resolution", ()))
+            save_res = tuple(saved.get("resolution", ()))
+            if run_res != save_res:
+                changed.append(key)
+        else:
+            if running.get(key) != saved.get(key):
+                changed.append(key)
+    return changed
+
+
+def needs_restart(running: dict[str, Any], saved: dict[str, Any]) -> bool:
+    """Check if any restart-needed setting differs between running and saved states.
+
+    Args:
+        running: Running settings dictionary.
+        saved: Saved settings dictionary.
+
+    Returns:
+        bool: True if application restart is required for changes to take effect.
+    """
+    return bool(changed_restart_keys(running, saved))
+
+
 def settings_changed(old: dict[str, Any], new: dict[str, Any]) -> bool:
     """Check if display-affecting settings changed between two states.
 
-    Used to decide if the 10-second auto-revert confirmation modal is needed.
+    Maintained for backward compatibility.
 
     Args:
         old: Original settings dictionary.

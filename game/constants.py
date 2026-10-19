@@ -70,8 +70,6 @@ SPLASH_FADE_OUT: float = 1.0
 STARTUP_ENABLED: bool = True  # If False, skips straight to Title screen for fast dev
 STARTUP_GAP_SECONDS: float = 0.15  # Black gap between consecutive startup cards
 
-SETTINGS_REVERT_SECONDS: int = 10
-
 DAY_TICKS: int = 180
 NIGHT_TICKS: int = 180
 FIXED_TICK_RATE: float = 1.0  # 1 logic tick = 1 second at 1x speed
@@ -84,6 +82,8 @@ COLOR_WHITE: tuple[int, int, int] = (255, 255, 255)
 COLOR_DARK_GREY: tuple[int, int, int] = (40, 40, 40)
 COLOR_MID_GREY: tuple[int, int, int] = (100, 100, 100)
 COLOR_LIGHT_GREY: tuple[int, int, int] = (180, 180, 180)
+COLOR_REMINDER: tuple[int, int, int] = (255, 140, 40)    # orange restart reminder
+COLOR_ERROR: tuple[int, int, int] = (240, 70, 70)        # red error text
 
 # Five bars accent colors
 COLOR_ENERGY: tuple[int, int, int] = (255, 220, 50)     # yellow

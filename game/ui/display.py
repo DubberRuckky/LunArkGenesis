@@ -117,9 +117,9 @@ class Display:
     def create_window(self) -> None:
         """Create or recreate the pygame window based on current settings."""
         vsync_flag: int = 1 if self.settings.get("vsync", False) else 0
+        desktop_w, desktop_h = self.get_desktop_resolution()
 
         if self.is_fullscreen:
-            desktop_w, desktop_h = self.get_desktop_resolution()
             # NOFRAME gives a true borderless fullscreen that covers the
             # taskbar, which feels more polished than SCALED.
             self.window = pygame.display.set_mode(
@@ -129,8 +129,24 @@ class Display:
             )
         else:
             res = self.settings.get("resolution", DEFAULT_RESOLUTION)
+            target_w, target_h = int(res[0]), int(res[1])
+            if target_w > desktop_w or target_h > desktop_h:
+                logger.warning(
+                    "Saved window size (%d, %d) exceeds desktop resolution (%d, %d). Shrinking window.",
+                    target_w,
+                    target_h,
+                    desktop_w,
+                    desktop_h,
+                )
+                def_w, def_h = DEFAULT_RESOLUTION
+                if def_w <= desktop_w and def_h <= desktop_h:
+                    target_w, target_h = def_w, def_h
+                else:
+                    target_w, target_h = desktop_w, desktop_h
+                self.settings["resolution"] = [target_w, target_h]
+
             self.window = pygame.display.set_mode(
-                res,
+                (target_w, target_h),
                 pygame.RESIZABLE,
                 vsync=vsync_flag,
             )
@@ -142,6 +158,20 @@ class Display:
             "Window created: %s  fullscreen=%s  vsync=%s",
             self.window_size, self.is_fullscreen, bool(vsync_flag),
         )
+
+    def handle_resize(self, new_size: Tuple[int, int] | None = None) -> None:
+        """Handle window resize event, refreshing surface and recalculating scaling.
+
+        Args:
+            new_size: Optional (w, h) tuple passed from VIDEORESIZE event.
+        """
+        surface = pygame.display.get_surface()
+        if surface is not None:
+            self.window = surface
+            self.window_size = self.window.get_size()
+        elif new_size:
+            self.window_size = new_size
+        self._calculate_scaling()
 
     def _calculate_scaling(self) -> None:
         """Calculate scale factor, offset, and cached scaled rect.

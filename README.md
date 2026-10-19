@@ -60,8 +60,8 @@ In *LunArk: Genesis*, you step into the boots of a lunar outpost commander estab
      ```
 
 > [!TIP]
-> **Stuck in Fullscreen?**
-> Press **`F11`** at any time from any screen to instantly toggle between Fullscreen and Windowed mode. Press **`Esc`** in menus to go back, or click the **Quit** button on the Title Screen.
+> **Stuck on a bad display or in Fullscreen?**
+> Press **`F11`** at any time from any screen to instantly toggle between Fullscreen and Windowed mode. If an invalid display configuration leaves you stranded, simply delete `saves/settings.json` to restore safe factory defaults. Press **`Esc`** in menus to go back, or click the **Quit** button on the Title Screen.
 
 ---
 
@@ -86,13 +86,20 @@ In *LunArk: Genesis*, you step into the boots of a lunar outpost commander estab
 
 Accessible from both the Title Screen and Pause Menu:
 
-- **Display Mode**: Choose between *Fullscreen* (runs at native desktop resolution) and *Windowed*.
-- **Resolution**: Available in Windowed mode only (1280×720, 1366×768, 1600×900, 1920×1080, 2560×1440, plus native monitor size).
-- **FPS Cap**: Limit refresh rate to 30, 60, 120, 144 FPS, or Unlimited (0). Default is 60 FPS.
-- **VSync**: Synchronizes frame output with your display to prevent tearing.
-- **Show FPS Counter**: Toggles a lightweight green real-time frame rate readout in the top-right corner.
-- **Integer Scaling**: [Default: On] Scales the 480×270 canvas strictly by whole integers (e.g. 2x, 3x, 4x) with crisp pixel preservation, adding clean letterbox bars when needed.
-- **10-Second Safety Revert**: Changing your display mode or resolution prompts a 10-second countdown confirmation modal. If the display is black or incompatible, it automatically reverts to your working settings without leaving you stranded.
+- **Settings Groups**:
+  - **Live Settings** (`FPS Cap`, `Show FPS Counter`): Applied instantly to the running game.
+  - **Restart-Needed Settings** (`Display Mode`, `Resolution`, `VSync`, `Integer Scaling`): Display changes require an application restart to take effect safely without driver instability.
+- **Apply & Restart Prompt**: Clicking **Apply** validates choices, applies live options immediately, and saves all settings to `saves/settings.json`. If any restart-needed setting was modified, an interactive confirmation modal appears:
+  - **Restart Now**: Spawns a fresh copy of the game (passing `--skip-startup` to boot directly into the Title Screen) and closes the current process cleanly.
+  - **Later**: Closes the modal. The saved settings will take effect on the next launch. An orange **"Restart to apply"** reminder remains visible in the panel header while saved settings differ from the running game.
+  - **Esc** closes the modal (equivalent to clicking **Later**).
+- **Options Detailed**:
+  - **Display Mode**: Choose between *Fullscreen* (runs at native desktop resolution) and *Windowed*.
+  - **Resolution**: Available in Windowed mode only (standard 16:9 resolutions plus native desktop size).
+  - **FPS Cap**: Limit refresh rate to 30, 60, 120, 144 FPS, or Unlimited (0). Default is 60 FPS.
+  - **VSync**: Synchronizes frame output with your display refresh rate to eliminate tearing.
+  - **Show FPS Counter**: Toggles a lightweight green real-time frame rate readout in the top-right corner.
+  - **Integer Scaling**: [Default: On] Scales the 480×270 canvas strictly by whole integers (e.g. 2x, 3x, 4x) with crisp pixel preservation, adding clean letterbox bars when needed.
 
 ---
 
@@ -148,6 +155,7 @@ LunArkGenesis/
 │   └── vehicles/            # Lunar lander & rover sprites
 ├── saves/                   # Runtime saves (settings.json, savegame.json)
 ├── tests/                   # Pytest test suite for headless game rules
+│   ├── test_restart.py      # Restart command & key group separation tests
 │   ├── test_settings.py     # Settings validation & persistence unit tests
 │   └── test_startup_sequence.py # Startup sequence timeline & alpha tests
 └── game/
@@ -156,6 +164,7 @@ LunArkGenesis/
     ├── constants.py         # Magic numbers, colors, paths, tile & icon index tables
     ├── assets.py            # AssetManager: loader, 9-slice, placeholders, fallback fonts
     ├── logic/               # Pure Python game mechanics (NO pygame imports allowed)
+    │   ├── restart.py       # Pure-Python restart command generation
     │   ├── settings.py      # Settings schema, validation, file persistence
     │   └── startup_sequence.py # Pure-Python startup card timeline & alpha calculations
     ├── ui/                  # User interface presentation layer
@@ -173,6 +182,7 @@ LunArkGenesis/
 ```
 +---------------------------------------------------------------+
 |                           main.py                             |
+|          (--skip-startup flag supported for fast boot)         |
 +---------------------------------------------------------------+
                                |
                                v
@@ -195,6 +205,7 @@ LunArkGenesis/
                           +---------------------+
                           |    game.logic.*     |
                           |  (NO pygame here)   |
+                          | - restart.py        |
                           | - settings.py       |
                           | - startup_sequence  |
                           +---------------------+
@@ -264,6 +275,16 @@ Card timing, paths, text lines, and scaling modes are defined in `game/data/star
 ## Roadmap & Changelog
 
 ### Changelog
+- **Display Settings Flow & Restart Prompt**:
+  - Replaced fragile 10-second auto-revert window recreation with an explicit restart confirmation prompt.
+  - Categorized settings into Live (`fps_cap`, `show_fps`) and Restart-Needed (`fullscreen`, `resolution`, `integer_scaling`, `vsync`).
+  - Added pure-Python command generator (`game/logic/restart.py`) preserving arguments and paths with spaces.
+  - Added `--skip-startup` CLI flag in `main.py` allowing fast reboot straight to the Title screen.
+  - Implemented "Restart required" modal ("Restart Now" / "Later") and orange "Restart to apply" header reminder.
+  - Added desktop resolution support via `extra_resolutions` in settings validation, preventing desktop resolution resets.
+  - Added `pygame.VIDEORESIZE` event handling and window bounds clamping against desktop dimensions.
+  - Preserved live F11 fullscreen toggling without discarding pending restart settings.
+  - Added comprehensive test suite (`tests/test_restart.py`), bringing test suite to 25 passing tests.
 - **Startup Sequence (3-Card Chain)**:
   - Replaced single splash screen with a 3-card introductory sequence: Team (`logo.png`), Art (`aseprite.png`), and Engine (`pygame_ce.png`).
   - Implemented pure-Python sequence timeline logic (`game/logic/startup_sequence.py`) with zero pygame dependencies.
@@ -285,7 +306,7 @@ Card timing, paths, text lines, and scaling modes are defined in `game/data/star
   - Pure Python settings logic (`game/logic/settings.py`) with 100% pytest test suite pass.
   - Reusable widget toolkit (`Button`, `Toggle`, `OptionSelector`, `ProgressBar`, `Panel`, `DialogueBox`, `TextInput`, `Tooltip`).
   - Procedural runtime asset fallback system with missing asset console reporting and F3 diagnostic HUD.
-  - Splash screen with integer-scaled logo, Title screen, and Settings Menu with 10-second safety auto-revert.
+  - Splash screen with integer-scaled logo, Title screen, and Settings Menu with restart confirmation modal.
 - **Phase 2 (Upcoming)**: Headless game logic (meters, day/night clock, 48-col grid, building placement & radiation calculation, data/*.json).
 - **Phase 3 (Upcoming)**: Play screen with camera panning, build tray, ghost preview, HUD meters.
 - **Phase 4 (Upcoming)**: Awakening intro cutscene, player naming, interactive tutorial.
