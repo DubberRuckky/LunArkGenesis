@@ -44,7 +44,7 @@ echo.
 echo [*] Launching LunArk: Genesis...
 echo ========================================================
 echo.
-python main.py --skip-startup --debug
+python main.py
 if errorlevel 1 (
     echo.
     echo [!] The game exited with an error.
