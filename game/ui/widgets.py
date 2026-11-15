@@ -40,21 +40,67 @@ def wrap_text_to_width(text: str, font: pygame.font.Font, max_width: int) -> lis
     """Wrap a text string into multiple lines so no line exceeds max_width."""
     if not text:
         return []
-    words = text.split(" ")
     lines: list[str] = []
-    current_line = ""
+    paragraphs = text.split("\n")
+    for para in paragraphs:
+        words = para.split(" ")
+        if not words or (len(words) == 1 and words[0] == ""):
+            lines.append("")
+            continue
+        current_line = ""
+        for word in words:
+            # If a single word is wider than max_width, break it into chunks
+            if font.size(word)[0] > max_width:
+                if current_line:
+                    lines.append(current_line)
+                    current_line = ""
+                chunk = ""
+                for ch in word:
+                    if font.size(chunk + ch)[0] <= max_width:
+                        chunk += ch
+                    else:
+                        if chunk:
+                            lines.append(chunk)
+                        chunk = ch
+                if chunk:
+                    current_line = chunk
+                continue
 
-    for word in words:
-        test_line = f"{current_line} {word}".strip()
-        if font.size(test_line)[0] <= max_width:
-            current_line = test_line
-        else:
-            if current_line:
-                lines.append(current_line)
-            current_line = word
-    if current_line:
-        lines.append(current_line)
+            test_line = f"{current_line} {word}".strip() if current_line else word
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
     return lines
+
+
+# Convenient alias
+wrap_text = wrap_text_to_width
+
+
+def draw_text(
+    surface: pygame.Surface,
+    text: str,
+    font: pygame.font.Font,
+    color: tuple[int, int, int],
+    x: int,
+    y: int,
+    max_width: int | None = None,
+    line_spacing: int = 2,
+) -> int:
+    """Render text with automatic word wrapping, returning the bottom y coordinate."""
+    lines = wrap_text_to_width(text, font, max_width) if (max_width and max_width > 0) else text.split("\n")
+    curr_y = y
+    line_h = font.get_linesize() + line_spacing
+    for line in lines:
+        surf = font.render(line, False, color)
+        surface.blit(surf, (x, curr_y))
+        curr_y += line_h
+    return curr_y
 
 
 def build_text_box(
@@ -180,6 +226,15 @@ class Button:
         self.clicked = False
         self.nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = None
 
+    def set_position(self, x: int, y: int, w: int | None = None, h: int | None = None) -> None:
+        """Reposition button and optionally resize its rect."""
+        self.rect.x = int(x)
+        self.rect.y = int(y)
+        if w is not None:
+            self.rect.width = int(w)
+        if h is not None:
+            self.rect.height = int(h)
+
     def set_nine_slice(self, draw_func: Callable[[pygame.Surface, pygame.Rect], None] | None) -> None:
         """Attach a 9-slice draw function for custom button art."""
         self.nine_slice = draw_func
@@ -274,6 +329,13 @@ class Toggle:
         self.pill_rect = pygame.Rect(self.x, self.y + 1, 24, 12)
         self.text_surf = self.font.render(self.label_text, False, COLOR_BUTTON_TEXT)
 
+    def set_position(self, x: int, y: int) -> None:
+        """Reposition toggle switch and label."""
+        self.x = int(x)
+        self.y = int(y)
+        self.pill_rect.x = self.x
+        self.pill_rect.y = self.y + 1
+
     def update(self, events: list[pygame.event.Event], mouse_pos: tuple[int, int]) -> None:
         """Toggle value on click over the pill or label."""
         hit_h = max(14, self.text_surf.get_height())
@@ -332,7 +394,18 @@ class OptionSelector:
         self.note: str | None = None
 
         # Arrow hitboxes (each 12x14 px)
-        self.btn_left_rect = pygame.Rect(self.rect.right - 110, self.rect.y + 1, 12, 14)
+        selector_w = min(110, max(84, int(self.rect.width * 0.46))) if self.rect.width < 240 else 110
+        self.btn_left_rect = pygame.Rect(self.rect.right - selector_w, self.rect.y + 1, 12, 14)
+        self.btn_right_rect = pygame.Rect(self.rect.right - 14, self.rect.y + 1, 12, 14)
+
+    def set_position(self, x: int, y: int, w: int | None = None) -> None:
+        """Reposition selector and recalculate arrow hitboxes."""
+        self.rect.x = int(x)
+        self.rect.y = int(y)
+        if w is not None:
+            self.rect.width = int(w)
+        selector_w = min(110, max(84, int(self.rect.width * 0.46))) if self.rect.width < 240 else 110
+        self.btn_left_rect = pygame.Rect(self.rect.right - selector_w, self.rect.y + 1, 12, 14)
         self.btn_right_rect = pygame.Rect(self.rect.right - 14, self.rect.y + 1, 12, 14)
 
     def get_value(self) -> str:
@@ -460,6 +533,10 @@ class Panel:
     def set_nine_slice(self, draw_func: Callable[[pygame.Surface, pygame.Rect], None] | None) -> None:
         """Set optional custom 9-slice drawer."""
         self.nine_slice = draw_func
+
+    def set_rect(self, x: int, y: int, w: int, h: int) -> None:
+        """Update panel rect bounds."""
+        self.rect = pygame.Rect(int(x), int(y), int(w), int(h))
 
     def draw(self, surface: pygame.Surface) -> None:
         """Render panel onto destination surface."""

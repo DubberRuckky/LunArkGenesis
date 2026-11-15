@@ -190,3 +190,68 @@ def test_all_screens_draw_headless_at_mouse_positions(app_instance: App) -> None
             # Draw onto canvas - must not raise any exception (e.g. ValueError: invalid color)
             screen.draw(canvas)
 
+
+def test_settings_menu_sizing_and_wrapping(app_instance: App) -> None:
+    """Verifies SettingsMenu sizing, screen bounds fitting, centering, and text wrapping."""
+    from game.ui.screens.settings_menu import SettingsMenu, SettingsScreen
+    from game.ui.widgets import wrap_text, wrap_text_to_width, draw_text
+    import pygame
+
+    assert SettingsMenu is SettingsScreen
+
+    menu = SettingsScreen(app_instance)
+
+    # 1. Verify menu panel is centered and fits completely inside the 480x270 screen
+    screen_rect = pygame.Rect(0, 0, 480, 270)
+    assert screen_rect.contains(menu.panel.rect), (
+        f"Settings panel {menu.panel.rect} exceeds screen {screen_rect}"
+    )
+    assert menu.panel.rect.centerx == 240
+    assert menu.panel.rect.centery == 135
+
+    # 2. Verify all interactive controls fit inside the panel
+    controls = [
+        menu.mode_selector,
+        menu.res_selector,
+        menu.fps_selector,
+        menu.toggle_vsync,
+        menu.toggle_int_scale,
+        menu.toggle_show_fps,
+        menu.audio_master_sel,
+        menu.audio_music_sel,
+        menu.audio_sfx_sel,
+        menu.btn_apply,
+        menu.btn_reset,
+        menu.btn_back,
+    ]
+    for ctrl in controls:
+        r = getattr(ctrl, "rect", None) or getattr(ctrl, "pill_rect", None)
+        assert r is not None
+        assert menu.panel.rect.contains(r), (
+            f"Control {ctrl} rect {r} is outside settings panel {menu.panel.rect}"
+        )
+
+    # 3. Verify resize method re-centers
+    menu.resize(480, 270)
+    assert menu.panel.rect.centerx == 240
+    assert menu.panel.rect.centery == 135
+
+    # 4. Verify text wrapping helpers
+    font = menu.font
+    sample = "Astronaut training requires careful module management and high vigilance during lunar nightfall."
+    wrapped = wrap_text(sample, font, 100)
+    for line in wrapped:
+        assert font.size(line)[0] <= 100, f"Line '{line}' exceeds max width 100"
+
+    # Single very long word wrapping
+    long_word = "Supercalifragilisticexpialidocious"
+    wrapped_long = wrap_text_to_width(long_word, font, 60)
+    for line in wrapped_long:
+        assert font.size(line)[0] <= 60
+
+    # Draw text test
+    test_surf = pygame.Surface((200, 200))
+    end_y = draw_text(test_surf, "Test line 1\nTest line 2", font, (255, 255, 255), 10, 10, max_width=150)
+    assert end_y > 10
+
+

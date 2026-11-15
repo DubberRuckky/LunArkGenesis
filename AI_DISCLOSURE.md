@@ -102,3 +102,9 @@ All pixel art and visual illustrations were created by human artists in **Asepri
   - Removed all hard character-count truncations and implemented shared `build_text_box` helper and card name auto-fitting ensuring all building names fit in tray cards.
   - Integrated live game background under dimmed tutorial overlay and positioned "SPACE or ENTER" hint without button overlap.
   - Added unit tests across all 5 fix tasks (now 101 tests passing). Headless smoke test clean.
+
+- **2026-11-15 (Settings Menu Sizing & Multiplatform Launch Scripts)** *(continuation — written by Gemini Flash in Antigravity)*:
+  - Resized and centered Settings Menu into a balanced two-column layout fitting completely within 480×270 screen boundaries.
+  - Added `SettingsMenu = SettingsScreen` alias, `resize()` method, age 7–12 cadet tips box, and robust text-wrapping & word breaking in `wrap_text_to_width` and `draw_text`.
+  - Created `start_game.bat` using CMD commands (`python main.py --skip-startup --debug`) and executable `start_game.sh` (`python3 main.py`).
+  - Added unit test suite `test_settings_menu_sizing_and_wrapping` in `test_screens.py` (all 102 tests passing).

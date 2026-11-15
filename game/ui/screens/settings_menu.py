@@ -27,7 +27,15 @@ from game.logic.settings import (
     needs_restart,
     validate_settings,
 )
-from game.ui.widgets import Button, OptionSelector, Panel, Toggle
+from game.ui.widgets import (
+    Button,
+    OptionSelector,
+    Panel,
+    Toggle,
+    draw_text,
+    wrap_text,
+    wrap_text_to_width,
+)
 
 
 class SettingsScreen:
@@ -64,23 +72,17 @@ class SettingsScreen:
         cur_fps = self.pending_settings.get("fps_cap", 60)
         fps_idx = self.fps_values.index(cur_fps) if cur_fps in self.fps_values else 1
 
-        # Container panel layout
-        panel_w = 340
-        panel_h = 246 + 28 * 3  # extra 3 rows for audio volume
-        panel_x = (INTERNAL_WIDTH - panel_w) // 2
-        panel_y = (INTERNAL_HEIGHT - panel_h) // 2
-        self.panel = Panel(panel_x, panel_y, panel_w, panel_h)
-
-        row_x = panel_x + 18
-        row_w = panel_w - 36
-        start_y = panel_y + 46
-        line_step = 28
+        # Container panel layout (initialized at dummy size, sized in resize())
+        self.panel = Panel(0, 0, 10, 10)
+        self.col1_x: int = 0
+        self.col2_x: int = 0
+        self.col_w: int = 0
 
         # 1. Display mode selector
         self.mode_selector = OptionSelector(
-            row_x,
-            start_y,
-            row_w,
+            0,
+            0,
+            100,
             "Display Mode",
             ["Fullscreen", "Windowed"],
             self.font,
@@ -90,9 +92,9 @@ class SettingsScreen:
 
         # 2. Resolution selector
         self.res_selector = OptionSelector(
-            row_x,
-            start_y + line_step,
-            row_w,
+            0,
+            0,
+            100,
             "Resolution",
             self.res_strings,
             self.font,
@@ -100,13 +102,12 @@ class SettingsScreen:
             callback=self._on_res_changed,
             enabled=not self.pending_settings.get("fullscreen"),
         )
-        self.res_selector.set_note("Fullscreen uses desktop resolution.")
 
         # 3. FPS Cap selector
         self.fps_selector = OptionSelector(
-            row_x,
-            start_y + line_step * 2,
-            row_w,
+            0,
+            0,
+            100,
             "FPS Cap",
             self.fps_strings,
             self.font,
@@ -116,42 +117,42 @@ class SettingsScreen:
 
         # 4. VSync toggle
         self.toggle_vsync = Toggle(
-            row_x,
-            start_y + line_step * 3,
-            "VSync (smooth screen sync)",
+            0,
+            0,
+            "VSync (Smooth Video)",
             self.font,
             value=self.pending_settings.get("vsync", True),
             callback=self._on_vsync_changed,
         )
 
-        # 5. Show FPS toggle
+        # 5. Integer scaling toggle
+        self.toggle_int_scale = Toggle(
+            0,
+            0,
+            "Integer Scaling (Sharp)",
+            self.font,
+            value=self.pending_settings.get("integer_scaling", True),
+            callback=self._on_int_scale_changed,
+        )
+
+        # 6. Show FPS toggle
         self.toggle_show_fps = Toggle(
-            row_x,
-            start_y + line_step * 4,
+            0,
+            0,
             "Show FPS Counter",
             self.font,
             value=self.pending_settings.get("show_fps", False),
             callback=self._on_show_fps_changed,
         )
 
-        # 6. Integer scaling toggle
-        self.toggle_int_scale = Toggle(
-            row_x,
-            start_y + line_step * 5,
-            "Integer Scaling (crisp pixels)",
-            self.font,
-            value=self.pending_settings.get("integer_scaling", True),
-            callback=self._on_int_scale_changed,
-        )
-
         # Audio volume values: 0-10 displayed as 0%-100%
-        vol_opts = [str(v * 10) + "%" for v in range(11)]  # ["0%","10%",...,"100%"]
+        vol_opts = [str(v * 10) + "%" for v in range(11)]
 
         # 7. Master volume
         self.audio_master_sel = OptionSelector(
-            row_x,
-            start_y + line_step * 6,
-            row_w,
+            0,
+            0,
+            100,
             "Master Volume",
             vol_opts,
             self.font,
@@ -161,9 +162,9 @@ class SettingsScreen:
 
         # 8. Music volume
         self.audio_music_sel = OptionSelector(
-            row_x,
-            start_y + line_step * 7,
-            row_w,
+            0,
+            0,
+            100,
             "Music Volume",
             vol_opts,
             self.font,
@@ -173,9 +174,9 @@ class SettingsScreen:
 
         # 9. Sound effects volume
         self.audio_sfx_sel = OptionSelector(
-            row_x,
-            start_y + line_step * 8,
-            row_w,
+            0,
+            0,
+            100,
             "Effects Volume",
             vol_opts,
             self.font,
@@ -184,71 +185,83 @@ class SettingsScreen:
         )
 
         # Action buttons
-        btn_y = panel_y + panel_h - 26
-        btn_w = 56
+        self.btn_apply = Button(0, 0, 60, 18, "Apply", self.font, callback=self._on_apply)
+        self.btn_reset = Button(0, 0, 114, 18, "Reset Defaults", self.font, callback=self._on_reset)
+        self.btn_back = Button(0, 0, 60, 18, "Back", self.font, callback=self._on_back)
+
+        # Restart modal
+        self.modal_rect = pygame.Rect(0, 0, 10, 10)
+        self.btn_restart_now = Button(0, 0, 100, 20, "Restart Now", self.font, callback=self._on_restart_now)
+        self.btn_later = Button(0, 0, 64, 20, "Later", self.font, callback=self._on_later)
+
+        self.buttons = [
+            self.btn_apply,
+            self.btn_reset,
+            self.btn_back,
+            self.btn_restart_now,
+            self.btn_later,
+        ]
+
+        # Apply two-column screen-fitted layout
+        self.resize(INTERNAL_WIDTH, INTERNAL_HEIGHT)
+
+    def resize(self, width: int | None = None, height: int | None = None) -> None:
+        """Dynamically center and scale the menu and controls to fit the screen properly."""
+        w = int(width if width is not None else INTERNAL_WIDTH)
+        h = int(height if height is not None else INTERNAL_HEIGHT)
+
+        # Container panel fits neatly on screen with margin
+        panel_w = min(452, w - 20)
+        panel_h = min(244, h - 16)
+        panel_x = (w - panel_w) // 2
+        panel_y = (h - panel_h) // 2
+        self.panel.set_rect(panel_x, panel_y, panel_w, panel_h)
+
+        interior_w = panel_w - 28
+        col_gap = 14
+        col_w = (interior_w - col_gap) // 2
+        self.col1_x = panel_x + 14
+        self.col2_x = self.col1_x + col_w + col_gap
+        self.col_w = col_w
+
+        start_y = panel_y + 44
+        step_y = 25
+
+        # Left column (Display & Video)
+        self.mode_selector.set_position(self.col1_x, start_y, col_w)
+        self.res_selector.set_position(self.col1_x, start_y + step_y, col_w)
+        self.fps_selector.set_position(self.col1_x, start_y + step_y * 2, col_w)
+        self.toggle_vsync.set_position(self.col1_x, start_y + step_y * 3)
+        self.toggle_int_scale.set_position(self.col1_x, start_y + step_y * 4)
+        self.toggle_show_fps.set_position(self.col1_x, start_y + step_y * 5)
+
+        # Right column (Audio & Sound)
+        self.audio_master_sel.set_position(self.col2_x, start_y, col_w)
+        self.audio_music_sel.set_position(self.col2_x, start_y + step_y, col_w)
+        self.audio_sfx_sel.set_position(self.col2_x, start_y + step_y * 2, col_w)
+
+        # Action Buttons
+        btn_y = panel_y + panel_h - 25
         btn_h = 18
+        self.btn_apply.set_position(panel_x + 14, btn_y, 60, btn_h)
+        self.btn_reset.set_position(panel_x + 82, btn_y, 114, btn_h)
+        self.btn_back.set_position(panel_x + panel_w - 74, btn_y, 60, btn_h)
 
-        self.btn_apply = Button(
-            panel_x + 18,
-            btn_y,
-            btn_w,
-            btn_h,
-            "Apply",
-            self.font,
-            callback=self._on_apply,
-        )
-        self.btn_reset = Button(
-            panel_x + 18 + btn_w + 8,
-            btn_y,
-            btn_w + 48,
-            btn_h,
-            "Reset Defaults",
-            self.font,
-            callback=self._on_reset,
-        )
-        self.btn_back = Button(
-            panel_x + panel_w - btn_w - 18,
-            btn_y,
-            btn_w,
-            btn_h,
-            "Back",
-            self.font,
-            callback=self._on_back,
-        )
-
-        # Restart confirmation modal layout
-        modal_w = 350
+        # Modal
+        modal_w = min(350, w - 40)
         modal_h = 104
-        modal_x = (INTERNAL_WIDTH - modal_w) // 2
-        modal_y = (INTERNAL_HEIGHT - modal_h) // 2
+        modal_x = (w - modal_w) // 2
+        modal_y = (h - modal_h) // 2
         self.modal_rect = pygame.Rect(modal_x, modal_y, modal_w, modal_h)
 
-        # Modal buttons: Restart Now (width 100), Later (width 64)
         btn_restart_w = 100
         btn_later_w = 64
         btn_gap = 16
         total_btn_w = btn_restart_w + btn_gap + btn_later_w
         modal_btn_x = modal_x + (modal_w - total_btn_w) // 2
         modal_btn_y = modal_y + 70
-
-        self.btn_restart_now = Button(
-            modal_btn_x,
-            modal_btn_y,
-            btn_restart_w,
-            20,
-            "Restart Now",
-            self.font,
-            callback=self._on_restart_now,
-        )
-        self.btn_later = Button(
-            modal_btn_x + btn_restart_w + btn_gap,
-            modal_btn_y,
-            btn_later_w,
-            20,
-            "Later",
-            self.font,
-            callback=self._on_later,
-        )
+        self.btn_restart_now.set_position(modal_btn_x, modal_btn_y, btn_restart_w, 20)
+        self.btn_later.set_position(modal_btn_x + btn_restart_w + btn_gap, modal_btn_y, btn_later_w, 20)
 
     # -----------------------------------------------------------------------
     # Widget Callbacks
@@ -398,29 +411,50 @@ class SettingsScreen:
         dim.fill((5, 5, 10, 180))
         surface.blit(dim, (0, 0))
 
-        # Panel frame
+        # Panel frame (centered on screen, guaranteed inside 480x270 bounds)
         self.panel.draw(surface)
 
         # Header Title
         title_surf = self.header_font.render("Settings", False, COLOR_WHITE)
-        surface.blit(title_surf, (self.panel.rect.x + 18, self.panel.rect.y + 10))
+        surface.blit(title_surf, (self.panel.rect.x + 16, self.panel.rect.y + 8))
 
         # Orange restart reminder in header if restart is pending
         if self.app.is_restart_pending():  # type: ignore[attr-defined]
             rem_surf = self.font.render("Restart to apply", False, COLOR_REMINDER)
-            rem_x = self.panel.rect.right - 18 - rem_surf.get_width()
-            surface.blit(rem_surf, (rem_x, self.panel.rect.y + 16))
+            rem_x = self.panel.rect.right - 16 - rem_surf.get_width()
+            surface.blit(rem_surf, (rem_x, self.panel.rect.y + 12))
 
-        # Rows
+        # Column Section Subheaders
+        disp_hdr = self.font.render("Display & Video", False, (120, 190, 255))
+        surface.blit(disp_hdr, (self.col1_x, self.panel.rect.y + 28))
+
+        audio_hdr = self.font.render("Audio & Sound", False, (120, 190, 255))
+        surface.blit(audio_hdr, (self.col2_x, self.panel.rect.y + 28))
+
+        # Left Column Rows
         self.mode_selector.draw(surface)
         self.res_selector.draw(surface)
         self.fps_selector.draw(surface)
         self.toggle_vsync.draw(surface)
-        self.toggle_show_fps.draw(surface)
         self.toggle_int_scale.draw(surface)
+        self.toggle_show_fps.draw(surface)
+
+        # Right Column Rows
         self.audio_master_sel.draw(surface)
         self.audio_music_sel.draw(surface)
         self.audio_sfx_sel.draw(surface)
+
+        # Cadet Controls Quick Tips Box in Right Column (Age 7-12 friendly)
+        tips_y = self.panel.rect.y + 44 + 25 * 3 + 4
+        tips_hdr = self.font.render("Cadet Controls:", False, (255, 215, 80))
+        surface.blit(tips_hdr, (self.col2_x, tips_y))
+
+        tip1 = self.font.render("* F11: Fullscreen toggle", False, (190, 195, 210))
+        tip2 = self.font.render("* Space: Pause game", False, (190, 195, 210))
+        tip3 = self.font.render("* ? or /: Controls guide", False, (190, 195, 210))
+        surface.blit(tip1, (self.col2_x, tips_y + 15))
+        surface.blit(tip2, (self.col2_x, tips_y + 28))
+        surface.blit(tip3, (self.col2_x, tips_y + 41))
 
         # Footer Buttons
         self.btn_apply.draw(surface)
@@ -455,3 +489,8 @@ class SettingsScreen:
 
             self.btn_restart_now.draw(surface)
             self.btn_later.draw(surface)
+
+
+# Alias for backward compatibility and alternate naming
+SettingsMenu = SettingsScreen
+__all__ = ["SettingsScreen", "SettingsMenu"]

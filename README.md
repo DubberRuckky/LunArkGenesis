@@ -285,6 +285,11 @@ Every subsequent game feature, simulation logic module, building economy, day/ni
   - Replaced hardcoded text truncations with shared `build_text_box` helper and tray card auto-fit logic.
   - Embedded dimmed live game screen behind tutorial walkthrough and aligned prompt text without button collision.
   - All 101 tests passing and headless smoke test clean.
+- **Settings Menu Sizing & Multiplatform Launch Scripts** *(continuation — Gemini Flash in Antigravity)*:
+  - Redesigned Settings Menu layout into two balanced columns centered cleanly within the 480×270 screen boundaries.
+  - Added `SettingsMenu = SettingsScreen` alias, `resize()` method, cadet tips box, and robust text-wrapping & word breaking in `wrap_text_to_width` and `draw_text`.
+  - Created Windows CMD batch script `start_game.bat` (`python main.py --skip-startup --debug`) and executable POSIX bash script `start_game.sh` (`python3 main.py`).
+  - Added unit test suite `test_settings_menu_sizing_and_wrapping` in `test_screens.py` (102 tests passing).
 
 ---
 
