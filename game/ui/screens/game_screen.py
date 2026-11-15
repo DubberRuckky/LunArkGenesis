@@ -72,7 +72,7 @@ class GameScreen:
         self.clock = TickClock(tick_rate=self.balance.get("tick_rate", 1.0), initial_speed=1)
         self.lunar_clock = LunarClock(self.balance)
         self.state = GameState(self.balance)
-        self.world_grid = WorldGrid(self.balance, self.map_data)
+        self.world_grid = WorldGrid(self.balance, self.map_data, world_cols=72)
         self.event_manager = EventManager(self.events_data, self.balance)
         self.objective_manager = ObjectiveManager(self.balance, self.text)
         self.objectives = self.objective_manager
@@ -157,9 +157,9 @@ class GameScreen:
 
         # Selected building for info panel
         self.selected_building_instance: BuildingInstance | None = None
-        self.info_panel = Panel(110, 28, 260, 72)
-        self.toggle_btn_rect = pygame.Rect(290, 74, 36, 16)
-        self.action_btn_rect = pygame.Rect(330, 74, 36, 16)
+        self.info_panel = Panel(85, 28, 310, 74)
+        self.toggle_btn_rect = pygame.Rect(280, 77, 44, 18)
+        self.action_btn_rect = pygame.Rect(330, 77, 58, 18)
 
         # First-time lunar night explanation modal
         self.night_popup_panel = Panel(100, 70, 280, 120)
@@ -584,7 +584,7 @@ class GameScreen:
         for col in range(self.world_cols):
             tx = col * self.tile_size - cam_x
             if -self.tile_size <= tx <= INTERNAL_WIDTH:
-                tile_idx = int(tile_map.get(str(col), 0))
+                tile_idx = int(tile_map.get(str(col), col % 4))
                 tile_surf = assets.get_tile(tile_idx)
                 surface.blit(tile_surf, (tx, surface_y))
 
@@ -710,7 +710,11 @@ class GameScreen:
             hint_txt = f"${cost}" if valid else reason
             hint_col = (80, 220, 80) if valid else (240, 70, 70)
             hint_surf = self.small_font.render(hint_txt, False, hint_col)
-            surface.blit(hint_surf, (gx, gy - 12))
+            hw = hint_surf.get_width()
+            hx = gx + (gw - hw) // 2
+            hx = max(6, min(INTERNAL_WIDTH - hw - 6, hx))
+            hy = max(26, gy - 14)
+            surface.blit(hint_surf, (hx, hy))
 
         elif self.build_tray.demolish_mode and (24 <= mouse_pos[1] < 220):
             target_b = self.world_grid.get_building_at(snapped_col)
@@ -728,6 +732,20 @@ class GameScreen:
                 refund = int(target_b.cost * self.refund_percent)
                 txt = self.small_font.render(f"Demolish: +${refund}", False, (255, 100, 100))
                 surface.blit(txt, (dx, dy - 12))
+            elif snapped_col in self.world_grid.blocked_tiles:
+                dx = snapped_col * self.tile_size - cam_x
+                dy = self.surface_y
+                dw = self.tile_size
+                dh = self.tile_size
+
+                highlight = pygame.Surface((dw, dh), pygame.SRCALPHA)
+                highlight.fill((240, 160, 40, 110))
+                surface.blit(highlight, (dx, dy))
+                pygame.draw.rect(surface, (255, 180, 50), pygame.Rect(dx, dy, dw, dh), 1)
+
+                txt = self.small_font.render("Clear Obstacle (Free)", False, (255, 200, 100))
+                tx = max(6, min(INTERNAL_WIDTH - txt.get_width() - 6, dx - 20))
+                surface.blit(txt, (tx, dy - 14))
 
         # 7. Building Info Panel
         hovered_b = self.world_grid.get_building_at(snapped_col) if (24 <= mouse_pos[1] < 220 and not self.build_tray.selected_building and not self.build_tray.demolish_mode) else None
@@ -915,10 +933,12 @@ class GameScreen:
         mouse_pos: tuple[int, int],
     ) -> None:
         """Render info panel for a placed building with on/off and action buttons."""
-        px = 110
+        px = 85
         py = 28
         self.info_panel.rect.x = px
         self.info_panel.rect.y = py
+        self.info_panel.rect.width = 310
+        self.info_panel.rect.height = 74
         self.info_panel.draw(surface)
 
         b_def = self.buildings_data.get(b.building_id, {})
@@ -927,13 +947,13 @@ class GameScreen:
         desc = txt_info.get("desc", "Base module.")
 
         t_surf = self.small_font.render(f"{name} ({b.width}x{b.height})", False, (80, 180, 255))
-        surface.blit(t_surf, (px + 6, py + 5))
+        surface.blit(t_surf, (px + 8, py + 5))
 
         from game.ui.widgets import wrap_text_to_width
-        desc_lines = wrap_text_to_width(desc, self.small_font, max_width=248)
+        desc_lines = wrap_text_to_width(desc, self.small_font, max_width=290)
         if desc_lines:
             d_surf = self.small_font.render(desc_lines[0], False, COLOR_WHITE)
-            surface.blit(d_surf, (px + 6, py + 19))
+            surface.blit(d_surf, (px + 8, py + 20))
 
         e_rate = b_def.get("energy_rate", 0)
         r_rate = b_def.get("revenue_rate", 0)
@@ -955,22 +975,23 @@ class GameScreen:
 
         stats_line = " | ".join(stats_parts) if stats_parts else "Passive Life Support"
         st_surf = self.small_font.render(stats_line, False, (180, 220, 180))
-        surface.blit(st_surf, (px + 6, py + 34))
+        surface.blit(st_surf, (px + 8, py + 35))
 
         # Status readout
         shield_txt = " [Shielded]" if b.is_shielded else ""
         dust_txt = f" [Dust L{b.dust_level}]" if b.dust_level > 0 else ""
         broken_txt = " [BROKEN]" if b.is_broken else ""
-        cond_surf = self.small_font.render(f"Cond:{shield_txt}{dust_txt}{broken_txt}", False, (255, 200, 100))
-        surface.blit(cond_surf, (px + 6, py + 52))
+        cond_str = f"Status:{shield_txt}{dust_txt}{broken_txt}" if (shield_txt or dust_txt or broken_txt) else "Status: [Normal]"
+        cond_surf = self.small_font.render(cond_str, False, (255, 200, 100))
+        surface.blit(cond_surf, (px + 8, py + 52))
 
         # Button 1: Power ON/OFF Toggle
-        btn_x = px + 165
-        btn_y = py + 50
+        btn_x = px + 185
+        btn_y = py + 49
         self.toggle_btn_rect.x = btn_x
         self.toggle_btn_rect.y = btn_y
-        self.toggle_btn_rect.width = 40
-        self.toggle_btn_rect.height = 16
+        self.toggle_btn_rect.width = 44
+        self.toggle_btn_rect.height = 18
 
         is_hover = self.toggle_btn_rect.collidepoint(mouse_pos)
         if b.is_active:
@@ -989,25 +1010,25 @@ class GameScreen:
         surface.blit(lbl_surf, (lx, ly))
 
         # Button 2: Action Button (Shield / Clean / Repair)
-        act_x = px + 210
-        act_y = py + 50
+        act_x = px + 235
+        act_y = py + 49
         self.action_btn_rect.x = act_x
         self.action_btn_rect.y = act_y
-        self.action_btn_rect.width = 44
-        self.action_btn_rect.height = 16
+        self.action_btn_rect.width = 66
+        self.action_btn_rect.height = 18
 
         act_hover = self.action_btn_rect.collidepoint(mouse_pos)
         if b.is_broken:
-            act_lbl = "Fix $25"
+            act_lbl = "Repair $25"
             act_bg = (180, 50, 50) if not act_hover else (210, 70, 70)
         elif b.building_id == "solar_array" and b.dust_level > 0:
-            act_lbl = "Cln $15"
+            act_lbl = "Clean $15"
             act_bg = (160, 140, 50) if not act_hover else (190, 170, 70)
         elif not b.is_shielded:
-            act_lbl = "Shld$30"
+            act_lbl = "Shield $30"
             act_bg = (60, 90, 140) if not act_hover else (80, 110, 170)
         else:
-            act_lbl = "Safe"
+            act_lbl = "Protected"
             act_bg = (40, 50, 65)
 
         pygame.draw.rect(surface, act_bg, self.action_btn_rect)

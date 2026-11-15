@@ -315,6 +315,12 @@ Every subsequent game feature, simulation logic module, building economy, day/ni
   - Integrated Departure Mono by Helena Zhang (`fonts/DepartureMono-Regular.otf`) under SIL Open Font License 1.1.
   - Implemented the strict multiple-of-11 rule (sizes 11, 22, 33) across all UI elements.
   - Expanded settings menu container and aligned option selectors cleanly.
+- **Asset Integration, Icons, UI Formatting & Grid Expansion (November 2026)**:
+  - Added welcome dialog and `.venv` setup scripts for Windows (`start_game.bat`) and Linux/macOS (`start_game.sh`).
+  - Wired in-memory texture loading with support for vertical 9-slice button sheets (`(24, 96)`) and memory-scaled 2x2 building footprints without changing source files.
+  - Replaced solid placeholder boxes with crisp 16x16 procedural vector pixel icons and terrain tiles.
+  - Resolved UI text collisions across the building inspection panel, placement ghost hints, HUD readouts, and build tray lock banners.
+  - Expanded world surface to 72 columns (50% increase in building area) and enabled clearing obstacle boulders via the Demolish tool.
 
 ---
 

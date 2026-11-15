@@ -108,3 +108,12 @@ All pixel art and visual illustrations were created by human artists in **Asepri
   - Added `SettingsMenu = SettingsScreen` alias, `resize()` method, age 7–12 cadet tips box, and robust text-wrapping & word breaking in `wrap_text_to_width` and `draw_text`.
   - Created `start_game.bat` using CMD commands (`python main.py --skip-startup --debug`) and executable `start_game.sh` (`python3 main.py`).
   - Added unit test suite `test_settings_menu_sizing_and_wrapping` in `test_screens.py` (all 102 tests passing).
+
+- **2026-11-15 (Asset Integration, Icon Fixes, Text Formatting & World Grid Expansion)** *(continuation — written by Antigravity)*:
+  - Updated both `start_game.bat` and `start_game.sh` with welcome dialogues, automated `.venv` creation, and dependency installation.
+  - Wired in-memory loading and scaling for textures in `img/` (supporting vertical button sheets `(24, 96)` and scaling 48x48 art into 2x2 grid footprints without touching source files on disk).
+  - Implemented crisp procedural 16x16 vector pixel fallback icons and terrain tiles across all 24 indices with zero magenta box artifacts.
+  - Expanded building info panel from 260px to 310px, eliminating button text collisions and improving action labels ("Repair $25", "Clean $15", "Shield $30", "Protected").
+  - Clamped placement ghost hint above HUD and within screen boundaries; moved build tray lock banners cleanly above the tray.
+  - Increased placeable world area by 50% (72 columns, 1152px wide world with 2.4 screens of panning) and enabled clearing obstacle boulders via the Demolish tool.
+  - Added unit tests in `test_polish_and_simulation.py` (105 tests passing, headless smoke test 100% clean).

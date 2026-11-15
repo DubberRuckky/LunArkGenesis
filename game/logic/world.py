@@ -49,11 +49,12 @@ class WorldGrid:
         self,
         balance_data: dict[str, Any] | None = None,
         map_data: dict[str, Any] | None = None,
+        world_cols: int | None = None,
     ) -> None:
         self.balance: dict[str, Any] = balance_data or load_balance()
         self.map_data: dict[str, Any] = map_data or load_map()
 
-        self.world_cols: int = int(self.map_data.get("world_cols", 48))
+        self.world_cols: int = int(world_cols if world_cols is not None else self.map_data.get("world_cols", 48))
         self.surface_row: int = int(self.map_data.get("surface_row", 10))
         self.blocked_tiles: set[int] = set(self.map_data.get("blocked_tiles", [8, 30, 31, 32]))
 
@@ -145,6 +146,9 @@ class WorldGrid:
         """Demolish building at `col` and grant refund percentage."""
         inst = self.get_building_at(col)
         if not inst:
+            if col in self.blocked_tiles:
+                self.blocked_tiles.remove(col)
+                return True, None, current_revenue, "Obstacle cleared! Space is now open for building."
             return False, None, current_revenue, "No building at this location."
 
         # Habitat pod cannot be demolished (required for crew!)

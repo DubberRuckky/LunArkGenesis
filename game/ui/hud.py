@@ -194,12 +194,13 @@ class HUD:
             shape_char = indicator_shapes.get(key, "")
             if shape_char:
                 shape_surf = self.font.render(shape_char, False, (220, 225, 235))
-                # Positioned at rect.x, above icon, completely outside bar_rect
-                surface.blit(shape_surf, (rect.x, rect.y - 2))
+                # Positioned cleanly above icon, never clipping and never overlapping bar
+                surface.blit(shape_surf, (rect.x, max(0, rect.y - 1)))
 
             # 5. Number
             val_txt = self.font.render(str(info["value"]), False, COLOR_WHITE)
-            surface.blit(val_txt, (bar_x + bar_w + 2, rect.y + 4))
+            val_y = bar_y + (bar_h - val_txt.get_height()) // 2
+            surface.blit(val_txt, (bar_x + bar_w + 3, val_y))
 
         # 3. Day / Night Clock
         if self.lunar_clock:

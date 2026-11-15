@@ -312,6 +312,6 @@ class BuildTray:
                 text_color=(255, 200, 80),
                 padding=3,
             )
-            bx = 190
-            by = INTERNAL_HEIGHT - 47
+            bx = max(8, min(INTERNAL_WIDTH - msg_box.get_width() - 8, (INTERNAL_WIDTH - msg_box.get_width()) // 2))
+            by = INTERNAL_HEIGHT - 50 - msg_box.get_height() - 4
             surface.blit(msg_box, (bx, by))

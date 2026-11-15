@@ -189,6 +189,128 @@ def make_nine_slice(
     return draw_slice
 
 
+def _create_procedural_icon(index: int) -> pygame.Surface:
+    """Generate crisp 16x16 procedural pixel/vector icon with transparent background."""
+    surf = pygame.Surface((16, 16), pygame.SRCALPHA)
+    c_yellow = (255, 220, 50)
+    c_orange = (255, 140, 40)
+    c_blue = (80, 180, 255)
+    c_green = (80, 220, 80)
+    c_purple = (200, 80, 200)
+    c_red = (240, 70, 70)
+    c_white = (245, 245, 250)
+    c_grey = (160, 165, 180)
+
+    if index in (0, 5):
+        pts = [(9, 1), (4, 8), (8, 8), (6, 15), (12, 7), (8, 7)]
+        pygame.draw.polygon(surf, c_yellow, pts)
+        if index == 5:
+            pygame.draw.rect(surf, c_grey, (2, 13, 12, 2))
+    elif index in (1, 8):
+        pygame.draw.rect(surf, c_blue, (6, 2, 4, 4))
+        pygame.draw.polygon(surf, c_blue, [(6, 5), (2, 13), (13, 13), (9, 5)])
+        pygame.draw.polygon(surf, (140, 220, 255), [(5, 9), (3, 12), (12, 12), (10, 9)])
+        surf.set_at((8, 10), c_white)
+    elif index in (2, 7):
+        pygame.draw.circle(surf, c_purple, (8, 8), 6)
+        surf.set_at((6, 6), (30, 10, 30))
+        surf.set_at((10, 6), (30, 10, 30))
+        pygame.draw.arc(surf, (30, 10, 30), pygame.Rect(5, 7, 6, 5), 3.14, 0, 1)
+    elif index in (3, 6):
+        pygame.draw.circle(surf, c_green, (8, 8), 6)
+        pygame.draw.line(surf, (20, 60, 20), (8, 4), (8, 12), 1)
+        pygame.draw.line(surf, (20, 60, 20), (6, 5), (10, 5), 1)
+        pygame.draw.line(surf, (20, 60, 20), (6, 8), (10, 8), 1)
+        pygame.draw.line(surf, (20, 60, 20), (6, 11), (10, 11), 1)
+    elif index in (4, 10):
+        pts = [(8, 1), (2, 13), (14, 13)]
+        pygame.draw.polygon(surf, c_orange if index == 10 else c_red, pts)
+        pygame.draw.line(surf, (20, 20, 20), (8, 5), (8, 9), 1)
+        surf.set_at((8, 11), (20, 20, 20))
+    elif index == 9:
+        pygame.draw.arc(surf, c_blue, pygame.Rect(2, 3, 12, 12), 0, 3.14, 2)
+        pygame.draw.rect(surf, c_grey, (2, 12, 12, 2))
+        pygame.draw.rect(surf, c_white, (6, 9, 4, 4))
+    elif index == 11:
+        pygame.draw.circle(surf, c_grey, (8, 8), 6, 1)
+        pygame.draw.line(surf, c_red, (4, 4), (12, 12), 2)
+    elif index == 12:
+        pygame.draw.line(surf, c_red, (4, 4), (12, 12), 2)
+        pygame.draw.line(surf, c_red, (12, 4), (4, 12), 2)
+    elif index == 13:
+        pygame.draw.arc(surf, c_grey, pygame.Rect(5, 2, 6, 6), 0, 3.14, 2)
+        pygame.draw.rect(surf, (220, 180, 50), (4, 6, 8, 8))
+        surf.set_at((8, 9), (50, 40, 10))
+    elif index == 14:
+        pygame.draw.circle(surf, c_yellow, (8, 8), 4)
+        pygame.draw.line(surf, c_yellow, (8, 1), (8, 3))
+        pygame.draw.line(surf, c_yellow, (8, 13), (8, 15))
+        pygame.draw.line(surf, c_yellow, (1, 8), (3, 8))
+        pygame.draw.line(surf, c_yellow, (13, 8), (15, 8))
+    elif index == 15:
+        pygame.draw.circle(surf, c_white, (8, 8), 5)
+        pygame.draw.circle(surf, (0, 0, 0, 0), (10, 7), 4)
+    elif index == 16:
+        pygame.draw.rect(surf, c_white, (4, 3, 3, 10))
+        pygame.draw.rect(surf, c_white, (9, 3, 3, 10))
+    elif index == 17:
+        pygame.draw.polygon(surf, c_white, [(5, 3), (5, 13), (12, 8)])
+    elif index == 18:
+        pygame.draw.polygon(surf, c_white, [(3, 4), (3, 12), (8, 8)])
+        pygame.draw.polygon(surf, c_white, [(8, 4), (8, 12), (13, 8)])
+    elif index == 19:
+        pygame.draw.circle(surf, c_grey, (8, 8), 5, 2)
+        for dx, dy in [(0, -6), (0, 6), (-6, 0), (6, 0), (-4, -4), (4, 4), (-4, 4), (4, -4)]:
+            surf.set_at((8 + dx // 2, 8 + dy // 2), c_grey)
+    elif index == 20:
+        pygame.draw.line(surf, c_white, (4, 4), (11, 11), 2)
+        pygame.draw.line(surf, c_white, (11, 4), (4, 11), 2)
+    elif index == 21:
+        pygame.draw.lines(surf, c_green, False, [(3, 8), (6, 12), (13, 4)], 2)
+    elif index == 22:
+        pygame.draw.polygon(surf, c_blue, [(8, 2), (13, 5), (11, 12), (8, 14), (5, 12), (3, 5)])
+    elif index == 23:
+        pygame.draw.line(surf, (150, 100, 50), (12, 3), (6, 10), 2)
+        pygame.draw.polygon(surf, c_grey, [(3, 11), (7, 9), (7, 13)])
+    else:
+        pygame.draw.circle(surf, c_grey, (8, 8), 3)
+
+    return surf
+
+
+def _create_procedural_tile(index: int) -> pygame.Surface:
+    """Generate crisp 16x16 procedural lunar terrain tile."""
+    surf = pygame.Surface((16, 16))
+    base_grey = 110 + (index % 4) * 5
+    surf.fill((base_grey, base_grey, base_grey))
+    if index in (0, 1, 2, 3):
+        pygame.draw.rect(surf, (base_grey + 25, base_grey + 25, base_grey + 22), (0, 0, 16, 4))
+        speck = (base_grey - 25, base_grey - 25, base_grey - 25)
+        surf.set_at(((index * 5) % 15, 2), speck)
+        surf.set_at(((index * 9) % 15, 8), speck)
+        surf.set_at(((index * 13) % 15, 12), speck)
+    elif index in (4, 5, 6):
+        pygame.draw.rect(surf, (80, 80, 85), (0, 4, 16, 12))
+        if index == 4:
+            pygame.draw.polygon(surf, (140, 140, 135), [(0, 0), (16, 4), (0, 4)])
+        elif index == 6:
+            pygame.draw.polygon(surf, (140, 140, 135), [(0, 4), (16, 0), (16, 4)])
+    elif index == 7:
+        pygame.draw.rect(surf, (base_grey + 20, base_grey + 20, base_grey + 18), (0, 0, 16, 4))
+        pygame.draw.circle(surf, (75, 75, 80), (8, 8), 5)
+        pygame.draw.circle(surf, (95, 95, 100), (7, 7), 3)
+    elif 8 <= index <= 15:
+        dark_grey = 65 + (index % 8) * 4
+        surf.fill((dark_grey, dark_grey, dark_grey))
+        surf.set_at((4, 4), (dark_grey + 20, dark_grey + 20, dark_grey + 20))
+        surf.set_at((12, 10), (dark_grey - 20, dark_grey - 20, dark_grey - 20))
+    else:
+        surf.fill((25, 25, 30))
+        pygame.draw.line(surf, (50, 55, 65), (0, 0), (15, 0))
+        pygame.draw.line(surf, (50, 55, 65), (0, 15), (15, 15))
+    return surf
+
+
 class AssetManager:
     """Singleton repository managing image, font, and UI slice resources.
 
@@ -334,28 +456,39 @@ class AssetManager:
         return sorted(list(self.missing))
 
     def get_icon(self, index: int) -> pygame.Surface:
-        """Extract a 16x16 icon from the shared icon spritesheet by index."""
-        sheet = self.load_image("icons", default_size=(128, 48))
-        cols = 8
-        row = index // cols
-        col = index % cols
-        x = col * 16
-        y = row * 16
-        if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
-            return sheet.subsurface(pygame.Rect(x, y, 16, 16))
-        return create_placeholder(16, 16, f"i{index}")
+        """Extract a 16x16 icon from the shared icon spritesheet by index or return procedural icon."""
+        if "icons" not in self.missing:
+            sheet = self.load_image("icons", default_size=(128, 48))
+            cols = 8
+            row = index // cols
+            col = index % cols
+            x = col * 16
+            y = row * 16
+            if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
+                return sheet.subsurface(pygame.Rect(x, y, 16, 16))
+
+        # Safe, crisp, procedural pixel icon fallback when icons.png is absent
+        cache_key = f"_proc_icon_{index}"
+        if cache_key not in self.images:
+            self.images[cache_key] = _create_procedural_icon(index)
+        return self.images[cache_key]
 
     def get_tile(self, index: int) -> pygame.Surface:
-        """Extract a 16x16 terrain tile from the tileset spritesheet by index."""
-        sheet = self.load_image("tileset", default_size=(128, 48))
-        cols = 8
-        row = index // cols
-        col = index % cols
-        x = col * 16
-        y = row * 16
-        if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
-            return sheet.subsurface(pygame.Rect(x, y, 16, 16))
-        return create_placeholder(16, 16, f"t{index}")
+        """Extract a 16x16 terrain tile from the tileset spritesheet by index or return procedural tile."""
+        if "tileset" not in self.missing:
+            sheet = self.load_image("tileset", default_size=(128, 48))
+            cols = 8
+            row = index // cols
+            col = index % cols
+            x = col * 16
+            y = row * 16
+            if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
+                return sheet.subsurface(pygame.Rect(x, y, 16, 16))
+
+        cache_key = f"_proc_tile_{index}"
+        if cache_key not in self.images:
+            self.images[cache_key] = _create_procedural_tile(index)
+        return self.images[cache_key]
 
     def get_button_slices(self) -> list[Callable[[pygame.Surface, pygame.Rect], None]]:
         """Return list of four 9-slice functions for normal, hover, pressed, disabled states."""
@@ -366,10 +499,14 @@ class AssetManager:
         slices: list[Callable[[pygame.Surface, pygame.Rect], None]] = []
         state_w = 24
         corner = 8
+        is_vertical = btn_sheet.get_height() >= 4 * state_w
         for i in range(4):
-            x = i * state_w
-            if x + state_w <= btn_sheet.get_width():
-                sub = btn_sheet.subsurface(pygame.Rect(x, 0, state_w, 24)).copy()
+            if is_vertical:
+                sub_rect = pygame.Rect(0, i * state_w, state_w, state_w)
+            else:
+                sub_rect = pygame.Rect(i * state_w, 0, state_w, 24)
+            if sub_rect.right <= btn_sheet.get_width() and sub_rect.bottom <= btn_sheet.get_height():
+                sub = btn_sheet.subsurface(sub_rect).copy()
             else:
                 sub = create_placeholder(state_w, 24, "button")
             slices.append(make_nine_slice(sub, corner=corner))
@@ -408,6 +545,13 @@ class AssetManager:
         strip = self.images[key]
         fw = width_tiles * 16
         fh = height_tiles * 16
+
+        # In-memory crop or scale to match grid footprint (source on disk stays unchanged)
+        if strip.get_width() != fw or strip.get_height() != fh:
+            num_frames = max(1, strip.get_width() // max(1, strip.get_height()))
+            target_w = fw * num_frames
+            strip = pygame.transform.scale(strip, (target_w, fh))
+
         frames = load_sprite_strip(strip, fw, fh)
         if not frames:
             return None

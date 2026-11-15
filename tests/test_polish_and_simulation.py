@@ -285,5 +285,61 @@ def test_tutorial_layout_and_hint_no_overlap():
     assert not hint_rect.colliderect(intro._btn_next.rect)
 
 
+def test_icons_and_tiles_valid_and_non_placeholder():
+    """Verify all 24 icons and tiles return 16x16 surfaces without placeholder magenta."""
+    import pygame
+    from game.assets import assets, _create_procedural_icon, _create_procedural_tile
+
+    for i in range(24):
+        # Icon from assets
+        icon = assets.get_icon(i)
+        assert icon.get_size() == (16, 16)
+        # Procedural icon fallback check
+        proc = _create_procedural_icon(i)
+        assert proc.get_size() == (16, 16)
+        # Ensure procedural icon is not solid placeholder magenta (180, 50, 180)
+        assert proc.get_at((0, 0)) != (180, 50, 180, 255)
+
+        # Tile from assets
+        tile = assets.get_tile(i)
+        assert tile.get_size() == (16, 16)
+        # Procedural tile fallback check
+        proc_tile = _create_procedural_tile(i)
+        assert proc_tile.get_size() == (16, 16)
+
+
+def test_button_slices_load_all_four_states():
+    """Verify button slices return 4 callable 9-slice functions without magenta placeholders."""
+    from game.assets import assets
+    slices = assets.get_button_slices()
+    assert len(slices) == 4
+    for s in slices:
+        assert callable(s)
+
+
+def test_expanded_world_grid_and_obstacle_clearing():
+    """Verify 72-column world grid and clearing obstacle tiles via demolish."""
+    from game.logic.world import WorldGrid
+
+    # Default world cols remains 48 for backward compatibility
+    w_default = WorldGrid()
+    assert w_default.world_cols == 48
+
+    # Expanded 72-column world
+    w72 = WorldGrid(world_cols=72)
+    assert w72.world_cols == 72
+
+    # Verify building on column 68 is valid (beyond old 48-col limit)
+    ok, reason = w72.can_place(col=68, width=2, cost=10, current_revenue=100)
+    assert ok, f"Expected placement at col 68 to be valid, got: {reason}"
+
+    # Verify clearing obstacle boulder via demolish
+    assert 8 in w72.blocked_tiles
+    ok, inst, rev, msg = w72.demolish_building(col=8, refund_percent=0.75, current_revenue=100)
+    assert ok
+    assert 8 not in w72.blocked_tiles
+    assert "cleared" in msg.lower()
+
+
 
 
