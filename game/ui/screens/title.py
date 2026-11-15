@@ -147,11 +147,19 @@ class TitleScreen:
             t_rect = title_surf.get_rect(center=(INTERNAL_WIDTH // 2, 60))
             surface.blit(title_surf, t_rect)
         else:
-            # Code-rendered title typography
+            # Code-rendered title typography with team logo badge
+            logo_surf = assets.load_image("logo")
+            if "logo" not in assets.missing and logo_surf.get_width() <= 66:
+                surface.blit(logo_surf, ((INTERNAL_WIDTH - logo_surf.get_width()) // 2, 16))
+                t_y = 58
+                s_y = 86
+            else:
+                t_y = 55
+                s_y = 85
             title_txt = self.title_font.render("LunArk: Genesis", False, COLOR_WHITE)
             sub_txt = self.font.render("Lunar Outpost Simulation", False, (160, 190, 220))
-            t_rect = title_txt.get_rect(center=(INTERNAL_WIDTH // 2, 55))
-            s_rect = sub_txt.get_rect(center=(INTERNAL_WIDTH // 2, 85))
+            t_rect = title_txt.get_rect(center=(INTERNAL_WIDTH // 2, t_y))
+            s_rect = sub_txt.get_rect(center=(INTERNAL_WIDTH // 2, s_y))
             surface.blit(title_txt, t_rect)
             surface.blit(sub_txt, s_rect)
 

@@ -258,6 +258,21 @@ class AssetManager:
                     surf = raw_surf.convert_alpha()
                 else:
                     surf = raw_surf
+
+                # Scale/crop high-res exports in Pygame to fit target canvas without modifying source files on disk
+                if key == "logo" and (surf.get_width() > 99 or surf.get_height() > 99):
+                    surf = pygame.transform.scale(surf, (33, 33))
+                elif key == "logo_aseprite" and (surf.get_width() > 120 or surf.get_height() > 72):
+                    scale = min(120 / surf.get_width(), 72 / surf.get_height())
+                    surf = pygame.transform.smoothscale(
+                        surf, (max(1, int(surf.get_width() * scale)), max(1, int(surf.get_height() * scale)))
+                    )
+                elif key == "logo_pygame_ce" and (surf.get_width() > 120 or surf.get_height() > 72):
+                    scale = min(120 / surf.get_width(), 72 / surf.get_height())
+                    surf = pygame.transform.smoothscale(
+                        surf, (max(1, int(surf.get_width() * scale)), max(1, int(surf.get_height() * scale)))
+                    )
+
                 self.images[key] = surf
                 return surf
             except Exception as exc:
