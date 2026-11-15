@@ -66,7 +66,7 @@ class SettingsScreen:
 
         # Container panel layout
         panel_w = 340
-        panel_h = 246
+        panel_h = 246 + 28 * 3  # extra 3 rows for audio volume
         panel_x = (INTERNAL_WIDTH - panel_w) // 2
         panel_y = (INTERNAL_HEIGHT - panel_h) // 2
         self.panel = Panel(panel_x, panel_y, panel_w, panel_h)
@@ -142,6 +142,45 @@ class SettingsScreen:
             self.font,
             value=self.pending_settings.get("integer_scaling", True),
             callback=self._on_int_scale_changed,
+        )
+
+        # Audio volume values: 0-10 displayed as 0%-100%
+        vol_opts = [str(v * 10) + "%" for v in range(11)]  # ["0%","10%",...,"100%"]
+
+        # 7. Master volume
+        self.audio_master_sel = OptionSelector(
+            row_x,
+            start_y + line_step * 6,
+            row_w,
+            "Master Volume",
+            vol_opts,
+            self.font,
+            selected_index=self.pending_settings.get("audio_master", 8),
+            callback=lambda idx, _t: self._on_audio_changed("audio_master", idx),
+        )
+
+        # 8. Music volume
+        self.audio_music_sel = OptionSelector(
+            row_x,
+            start_y + line_step * 7,
+            row_w,
+            "Music Volume",
+            vol_opts,
+            self.font,
+            selected_index=self.pending_settings.get("audio_music", 7),
+            callback=lambda idx, _t: self._on_audio_changed("audio_music", idx),
+        )
+
+        # 9. Sound effects volume
+        self.audio_sfx_sel = OptionSelector(
+            row_x,
+            start_y + line_step * 8,
+            row_w,
+            "Effects Volume",
+            vol_opts,
+            self.font,
+            selected_index=self.pending_settings.get("audio_sfx", 8),
+            callback=lambda idx, _t: self._on_audio_changed("audio_sfx", idx),
         )
 
         # Action buttons
@@ -237,6 +276,10 @@ class SettingsScreen:
     def _on_int_scale_changed(self, val: bool) -> None:
         self.pending_settings["integer_scaling"] = val
 
+    def _on_audio_changed(self, key: str, idx: int) -> None:
+        """Store audio volume level (0-10 steps)."""
+        self.pending_settings[key] = idx
+
     def _on_reset(self) -> None:
         """Reset pending controls to default settings values."""
         defaults = get_defaults()
@@ -288,6 +331,9 @@ class SettingsScreen:
         self.toggle_vsync.value = st.get("vsync", True)
         self.toggle_show_fps.value = st.get("show_fps", False)
         self.toggle_int_scale.value = st.get("integer_scaling", True)
+        self.audio_master_sel.set_index(st.get("audio_master", 8))
+        self.audio_music_sel.set_index(st.get("audio_music", 7))
+        self.audio_sfx_sel.set_index(st.get("audio_sfx", 8))
 
     def _on_back(self) -> None:
         """Return to previous screen (Title or Pause)."""
@@ -323,6 +369,9 @@ class SettingsScreen:
         self.toggle_vsync.update(events, mouse_pos)
         self.toggle_show_fps.update(events, mouse_pos)
         self.toggle_int_scale.update(events, mouse_pos)
+        self.audio_master_sel.update(events, mouse_pos)
+        self.audio_music_sel.update(events, mouse_pos)
+        self.audio_sfx_sel.update(events, mouse_pos)
 
         self.btn_apply.update(events, mouse_pos)
         self.btn_reset.update(events, mouse_pos)
@@ -369,6 +418,9 @@ class SettingsScreen:
         self.toggle_vsync.draw(surface)
         self.toggle_show_fps.draw(surface)
         self.toggle_int_scale.draw(surface)
+        self.audio_master_sel.draw(surface)
+        self.audio_music_sel.draw(surface)
+        self.audio_sfx_sel.draw(surface)
 
         # Footer Buttons
         self.btn_apply.draw(surface)

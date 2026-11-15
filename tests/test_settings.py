@@ -37,6 +37,9 @@ def test_validate_valid_settings() -> None:
         "vsync": False,
         "show_fps": True,
         "integer_scaling": False,
+        "audio_master": 8,
+        "audio_music": 7,
+        "audio_sfx": 8,
     }
     validated = validate_settings(sample)
     assert validated == sample
@@ -117,6 +120,9 @@ def test_save_and_load_roundtrip(tmp_path: Path) -> None:
         "vsync": True,
         "show_fps": True,
         "integer_scaling": False,
+        "audio_master": 8,
+        "audio_music": 7,
+        "audio_sfx": 8,
     }
     saved = save_settings(custom, path=test_file)
     assert saved is True

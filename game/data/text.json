@@ -1,0 +1,157 @@
+{
+  "title": {
+    "start_game": "New Game",
+    "continue_game": "Continue",
+    "settings": "Settings",
+    "quit": "Quit",
+    "subtitle": "Moon-Base Simulator"
+  },
+  "pause": {
+    "title": "Base Paused",
+    "resume": "Resume",
+    "settings": "Settings",
+    "save": "Save Game",
+    "load": "Load Game",
+    "quit_to_title": "Quit to Title"
+  },
+  "game": {
+    "goal_banner": "Goal: Planet Stats {progress}% | Cycle {cycle} of {total_cycles}",
+    "cycle_day": "Day",
+    "cycle_night": "Night",
+    "warp_1x": "1x",
+    "warp_2x": "2x",
+    "warp_4x": "4x",
+    "warp_8x": "8x",
+    "paused": "PAUSED",
+    "dusk_warning": "Solar panels stop at night. Save your power!",
+    "battery_forecast": "At this rate, battery lasts about {seconds} seconds.",
+    "energy_critical": "Power is empty! Base shuts down in {seconds}s!",
+    "boredom_critical": "Crew is upset! Base gives up in {seconds}s!"
+  },
+  "win": {
+    "title": "Mission Accomplished!",
+    "reason": "You completed Planet Stats and survived three lunar days!",
+    "hints": [
+      "Solar arrays make clean energy while the Sun is up.",
+      "Fuel cells give steady power when night falls.",
+      "A happy crew keeps events from happening too quickly."
+    ],
+    "play_again": "Play Again",
+    "back_to_title": "Back to Title"
+  },
+  "lose": {
+    "title": "Mission Failed",
+    "energy_reason": "The base ran out of power for too long.",
+    "boredom_reason": "The crew got too bored and left their posts.",
+    "energy_hints": [
+      "Build extra fuel cells before the long night begins.",
+      "Turn off science buildings at night to save precious power."
+    ],
+    "boredom_hints": [
+      "Build a Gym or Cafe to cheer up your crew.",
+      "Do not let the Event meter fill up all the way."
+    ],
+    "play_again": "Try Again",
+    "back_to_title": "Back to Title"
+  },
+  "indicators": {
+    "energy": {
+      "name": "Energy",
+      "desc": "Power available for your lights, heat, and machines.",
+      "why_dropping": "Energy is dropping because buildings use power.",
+      "why_rising": "Energy is rising from your generators."
+    },
+    "science": {
+      "name": "Science",
+      "desc": "Research points earned by labs to unlock new tech.",
+      "why_dropping": "Science points are steady.",
+      "why_rising": "Scientists are discovering new lunar data."
+    },
+    "boredom": {
+      "name": "Boredom",
+      "desc": "Crew mood. Lower is better so everyone stays focused.",
+      "why_dropping": "The crew is relaxing at fun activities.",
+      "why_rising": "Working on the Moon gets lonely over time."
+    },
+    "revenue": {
+      "name": "Revenue",
+      "desc": "Money to spend on new buildings and base repairs.",
+      "why_dropping": "Funds spent on construction and maintenance.",
+      "why_rising": "Income earned from data and mining operations."
+    },
+    "event": {
+      "name": "Event",
+      "desc": "Risk meter. When full, a major hazard will strike.",
+      "why_dropping": "A happy crew helps prevent accidents.",
+      "why_rising": "High boredom increases base hazard chances."
+    }
+  },
+  "buildings": {
+    "habitat_pod": {
+      "name": "Habitat Pod",
+      "desc": "Living quarters for your astronauts. Keeps crew safe and warm."
+    },
+    "fuel_cell": {
+      "name": "Fuel Cell Generator",
+      "desc": "Combines hydrogen and oxygen. Creates clean power and pure water."
+    },
+    "solar_array": {
+      "name": "Solar Array",
+      "desc": "Turns sunlight into abundant electricity. Stops working at night."
+    },
+    "nuclear_plant": {
+      "name": "Nuclear Plant",
+      "desc": "Powerful fission generator. Delivers steady energy day and night."
+    },
+    "datacentre": {
+      "name": "Datacentre",
+      "desc": "Processes space communications. Earns revenue from scientific missions."
+    },
+    "metal_mining": {
+      "name": "Metal Mining",
+      "desc": "Extracts titanium and iron from regolith. Regolith is crushed Moon rock."
+    },
+    "helium3_extraction": {
+      "name": "Helium-3 Extraction",
+      "desc": "Harvests trapped solar fuel. High revenue for clean Earth energy."
+    },
+    "gym": {
+      "name": "Lunar Gym",
+      "desc": "Astronauts exercise in low gravity. Keeps your crew healthy and happy."
+    },
+    "cafe": {
+      "name": "Base Cafe",
+      "desc": "A cozy gathering spot. Hot drinks and meals lower crew boredom."
+    },
+    "restaurant": {
+      "name": "Hydroponic Restaurant",
+      "desc": "Fresh food grown in nutrient water. Makes the crew feel right at home."
+    },
+    "lab": {
+      "name": "Research Lab",
+      "desc": "Analyzes lunar soil samples. Produces steady science points."
+    },
+    "land_research": {
+      "name": "Land Research Station",
+      "desc": "Surveys Moon craters and subsurface caves. Generates advanced science."
+    },
+    "planet_stats": {
+      "name": "Planet Stats Observatory",
+      "desc": "Final mission goal! Unlocks deep planetary knowledge to win the game."
+    }
+  },
+  "science_facts": {
+    "regolith": {
+      "text": "Regolith is lunar soil made of crushed rock and dust.",
+      "verify": true
+    },
+    "helium3": {
+      "text": "Helium-3 is solar fuel trapped inside Moon soil.",
+      "verify": true
+    },
+    "lunar_night": {
+      "text": "Night on the Moon lasts about 14 Earth days.",
+      "verify": true
+    }
+  }
+}

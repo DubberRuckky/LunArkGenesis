@@ -1,0 +1,68 @@
+{
+  "events": [
+    {
+      "id": "solar_flare",
+      "name": "Solar Flare",
+      "type": "major",
+      "weight": 20,
+      "countdown": 10,
+      "energy_loss": 30,
+      "energy_loss_shielded": 5,
+      "boredom_gain": 20,
+      "boredom_gain_shielded": 5,
+      "text": "Solar Flare approaching! Intense radiation storm incoming."
+    },
+    {
+      "id": "micrometeorite",
+      "name": "Micrometeorite",
+      "type": "major",
+      "weight": 20,
+      "countdown": 6,
+      "damage_chance_unshielded": 1.0,
+      "damage_chance_shielded": 0.2,
+      "text": "Micrometeorite impact trajectory detected!"
+    },
+    {
+      "id": "dust",
+      "name": "Lunar Dust",
+      "type": "hazard",
+      "weight": 20,
+      "countdown": 5,
+      "clean_cost": 15,
+      "text": "Lunar dust storm deposits dust on solar arrays."
+    },
+    {
+      "id": "crew_argument",
+      "name": "Crew Argument",
+      "type": "minor",
+      "weight": 15,
+      "countdown": 4,
+      "boredom_gain": 25,
+      "text": "Crew argument over meal rations! Morale drops."
+    },
+    {
+      "id": "equipment_failure",
+      "name": "Equipment Failure",
+      "type": "hazard",
+      "weight": 15,
+      "countdown": 5,
+      "repair_cost": 25,
+      "repair_ticks": 5,
+      "text": "Critical equipment failure! A base module has stopped."
+    },
+    {
+      "id": "care_package",
+      "name": "Care Package",
+      "type": "positive",
+      "weight": 10,
+      "countdown": 5,
+      "boredom_loss": 20,
+      "revenue_gain": 40,
+      "text": "Resupply care package arrived from Earth with fresh fruit!"
+    }
+  ],
+  "shielding": {
+    "cost": 30,
+    "_notes": "Revenue cost to cover a building with protective lunar regolith."
+  }
+}

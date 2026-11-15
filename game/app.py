@@ -20,10 +20,15 @@ from game.constants import (
     INTERNAL_HEIGHT,
     INTERNAL_WIDTH,
     ROOT_DIR,
+    SCREEN_GAME,
+    SCREEN_LOSE,
+    SCREEN_PAUSE,
+    SCREEN_PLAY,
     SCREEN_SETTINGS,
     SCREEN_SPLASH,
     SCREEN_STARTUP,
     SCREEN_TITLE,
+    SCREEN_WIN,
     STARTUP_ENABLED,
 )
 from game.logic.restart import build_restart_command
@@ -34,9 +39,14 @@ from game.logic.settings import (
     save_settings,
 )
 from game.ui.display import Display, enable_dpi_awareness, get_desktop_size
+from game.ui.screens.game_screen import GameScreen
+from game.ui.screens.intro_screen import IntroScreen
+from game.ui.screens.lose_screen import LoseScreen
+from game.ui.screens.pause_screen import PauseScreen
 from game.ui.screens.settings_menu import SettingsScreen
 from game.ui.screens.startup import StartupScreen
 from game.ui.screens.title import TitleScreen
+from game.ui.screens.win_screen import WinScreen
 
 # Configure basic console logger
 logging.basicConfig(
@@ -50,7 +60,9 @@ logger = logging.getLogger("lunark.app")
 class App:
     """Central engine orchestrating the Pygame loop and state hierarchy."""
 
-    def __init__(self, skip_startup: bool = False) -> None:
+    def __init__(self, skip_startup: bool = False, debug: bool = False) -> None:
+        self.debug: bool = debug
+
         # 1. Enable DPI awareness on Windows before display initialization
         enable_dpi_awareness()
 
@@ -78,6 +90,17 @@ class App:
             SCREEN_SPLASH: StartupScreen,
             SCREEN_TITLE: TitleScreen,
             SCREEN_SETTINGS: SettingsScreen,
+            SCREEN_GAME: GameScreen,
+            SCREEN_PLAY: GameScreen,
+            SCREEN_PAUSE: PauseScreen,
+            SCREEN_WIN: WinScreen,
+            SCREEN_LOSE: LoseScreen,
+            "intro": IntroScreen,
+            "game": GameScreen,
+            "play": GameScreen,
+            "pause": PauseScreen,
+            "win": WinScreen,
+            "lose": LoseScreen,
         }
 
         # Start with startup sequence if enabled and not skipped, otherwise straight to title screen
@@ -100,6 +123,15 @@ class App:
     # Screen Stack Methods
     # -----------------------------------------------------------------------
 
+    def start_new_game(self) -> None:
+        """Start a new game — go through intro/tutorial first."""
+        self.set_screen("intro")
+
+    def start_game_with_name(self, player_name: str) -> None:
+        """Launch GameScreen after intro, storing the Commander's name."""
+        self._player_name = player_name
+        self.set_screen(SCREEN_GAME)
+
     def set_screen(self, screen_name: str) -> None:
         """Replace entire screen stack with a new instance of screen_name."""
         cls = self.screen_registry.get(screen_name)
@@ -107,6 +139,10 @@ class App:
             self.screen_stack = [cls(self)]
         else:
             logger.error("Attempted to switch to unregistered screen: %s", screen_name)
+
+    def set_screen_instance(self, screen_instance: object) -> None:
+        """Replace entire screen stack with an existing screen instance."""
+        self.screen_stack = [screen_instance]
 
     def push_screen(self, screen_name: str) -> None:
         """Push a screen onto the stack (e.g. settings overlay)."""

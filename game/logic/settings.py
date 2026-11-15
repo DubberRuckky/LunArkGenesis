@@ -32,6 +32,10 @@ DEFAULTS: dict[str, Any] = {
     "vsync": True,
     "show_fps": False,
     "integer_scaling": True,
+    # Audio volumes: integer 0-10 (displayed as 0-100 in steps of 10)
+    "audio_master": 8,
+    "audio_music": 7,
+    "audio_sfx": 8,
 }
 
 # Settings grouped by application lifecycle
@@ -172,6 +176,14 @@ def validate_settings(
             defaults["integer_scaling"],
         )
         cleaned["integer_scaling"] = defaults["integer_scaling"]
+
+    # 7-9. Audio volumes (0-10 integer steps)
+    for audio_key in ("audio_master", "audio_music", "audio_sfx"):
+        val = settings.get(audio_key)
+        if isinstance(val, int) and 0 <= val <= 10:
+            cleaned[audio_key] = val
+        else:
+            cleaned[audio_key] = defaults[audio_key]
 
     return cleaned
 

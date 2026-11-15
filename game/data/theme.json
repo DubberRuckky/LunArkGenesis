@@ -1,0 +1,36 @@
+{
+  "bars": {
+    "energy": [255, 220, 50],
+    "science": [80, 180, 255],
+    "boredom": [200, 80, 200],
+    "revenue": [80, 220, 80],
+    "event": [220, 60, 60],
+    "bg": [30, 30, 40],
+    "border": [80, 80, 100]
+  },
+  "night_tint": [15, 20, 50, 160],
+  "alerts": {
+    "warning": [255, 140, 40],
+    "danger": [240, 70, 70],
+    "success": [80, 220, 80],
+    "neutral": [180, 180, 180]
+  },
+  "placement": {
+    "valid": [80, 220, 80],
+    "invalid": [220, 60, 60]
+  },
+  "ui": {
+    "padding": 6,
+    "panel_bg": [20, 22, 32, 225],
+    "panel_border": [90, 95, 115],
+    "dialogue_bg": [14, 16, 24, 235],
+    "dialogue_border": [100, 110, 140],
+    "tooltip_bg": [12, 14, 20, 240],
+    "tooltip_border": [120, 125, 150],
+    "button_normal": [55, 60, 75],
+    "button_hover": [75, 80, 100],
+    "button_pressed": [40, 44, 55],
+    "button_border": [110, 115, 130],
+    "button_text": [230, 230, 230]
+  }
+}

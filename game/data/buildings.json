@@ -1,0 +1,145 @@
+{
+  "habitat_pod": {
+    "category": "habitat",
+    "tier": 1,
+    "footprint": [4, 3],
+    "cost": 0,
+    "energy_rate": -1.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 0, "revenue": 0}
+  },
+  "fuel_cell": {
+    "category": "generator",
+    "tier": 1,
+    "footprint": [2, 2],
+    "cost": 40,
+    "energy_rate": 5.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 0, "revenue": 0}
+  },
+  "solar_array": {
+    "category": "generator",
+    "tier": 2,
+    "footprint": [3, 1],
+    "cost": 75,
+    "energy_rate": 10.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 20, "revenue": 60}
+  },
+  "nuclear_plant": {
+    "category": "generator",
+    "tier": 3,
+    "footprint": [3, 3],
+    "cost": 180,
+    "energy_rate": 25.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 60, "revenue": 140}
+  },
+  "datacentre": {
+    "category": "cashflow",
+    "tier": 1,
+    "footprint": [2, 2],
+    "cost": 50,
+    "energy_rate": -2.0,
+    "revenue_rate": 4.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 0, "revenue": 0}
+  },
+  "metal_mining": {
+    "category": "cashflow",
+    "tier": 2,
+    "footprint": [3, 2],
+    "cost": 90,
+    "energy_rate": -4.0,
+    "revenue_rate": 9.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 25, "revenue": 70}
+  },
+  "helium3_extraction": {
+    "category": "cashflow",
+    "tier": 3,
+    "footprint": [3, 3],
+    "cost": 160,
+    "energy_rate": -8.0,
+    "revenue_rate": 18.0,
+    "science_rate": 0.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 55, "revenue": 120}
+  },
+  "gym": {
+    "category": "activity",
+    "tier": 1,
+    "footprint": [2, 2],
+    "cost": 35,
+    "energy_rate": -1.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": -0.3,
+    "unlock_req": {"science": 0, "revenue": 0}
+  },
+  "cafe": {
+    "category": "activity",
+    "tier": 2,
+    "footprint": [2, 2],
+    "cost": 65,
+    "energy_rate": -2.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": -0.6,
+    "unlock_req": {"science": 15, "revenue": 50}
+  },
+  "restaurant": {
+    "category": "activity",
+    "tier": 3,
+    "footprint": [3, 2],
+    "cost": 120,
+    "energy_rate": -4.0,
+    "revenue_rate": 0.0,
+    "science_rate": 0.0,
+    "boredom_rate": -1.2,
+    "unlock_req": {"science": 45, "revenue": 100}
+  },
+  "lab": {
+    "category": "science",
+    "tier": 1,
+    "footprint": [2, 2],
+    "cost": 45,
+    "energy_rate": -2.0,
+    "revenue_rate": 0.0,
+    "science_rate": 1.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 0, "revenue": 0}
+  },
+  "land_research": {
+    "category": "science",
+    "tier": 2,
+    "footprint": [3, 2],
+    "cost": 80,
+    "energy_rate": -4.0,
+    "revenue_rate": 0.0,
+    "science_rate": 2.5,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 20, "revenue": 60}
+  },
+  "planet_stats": {
+    "category": "science",
+    "tier": 3,
+    "footprint": [3, 3],
+    "cost": 200,
+    "energy_rate": -6.0,
+    "revenue_rate": 0.0,
+    "science_rate": 5.0,
+    "boredom_rate": 0.0,
+    "unlock_req": {"science": 50, "revenue": 150}
+  }
+}

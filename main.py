@@ -17,9 +17,14 @@ def main() -> None:
         action="store_true",
         help="Skip startup sequence cards and open directly on Title screen",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable developer debug shortcuts (F4 for Win, F5 for Lose)",
+    )
     args, _ = parser.parse_known_args()
 
-    app = App(skip_startup=args.skip_startup)
+    app = App(skip_startup=args.skip_startup, debug=args.debug)
     app.run()
 
 

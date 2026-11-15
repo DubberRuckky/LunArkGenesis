@@ -1,0 +1,77 @@
+{
+  "tick_rate": 1.0,
+  "warp_speeds": [0, 1, 2, 4, 8],
+  "cycle": {
+    "day_ticks": 180,
+    "night_ticks": 180,
+    "total_cycles_to_win": 3,
+    "dusk_warning_ticks": 30,
+    "night_heating_power_loss": 3,
+    "_notes": "Day and night length in ticks, cycles needed to win, dusk warning time, and night heating drain."
+  },
+  "world": {
+    "world_cols": 48,
+    "tile_size": 16,
+    "surface_row": 10,
+    "underground_rows": 4,
+    "habitat_start_col": 20,
+    "_notes": "48 columns of 16-pixel tiles with ground surface at row 10."
+  },
+  "indicators": {
+    "energy": {
+      "max": 100,
+      "start": 50,
+      "base_change": 0,
+      "warning_threshold": 15,
+      "_notes": "Power for the base. Keep it above 0 or lights go out!"
+    },
+    "science": {
+      "max": 1000,
+      "start": 0,
+      "base_change": 0,
+      "warning_threshold": 0,
+      "target_to_win": 100,
+      "_notes": "Research points to unlock new buildings and complete Planet Stats."
+    },
+    "boredom": {
+      "max": 100,
+      "start": 10,
+      "base_change": 0.2,
+      "late_bump": 0.1,
+      "late_bump_cycle": 2,
+      "warning_threshold": 80,
+      "_notes": "Crew mood (lower is better). Gyms and cafes keep crew happy."
+    },
+    "revenue": {
+      "max": 1000,
+      "start": 150,
+      "base_change": 0,
+      "warning_threshold": 20,
+      "_notes": "Funds to build, shield, clean, and repair your base."
+    },
+    "event": {
+      "max": 100,
+      "start": 0,
+      "fill_rate_boredom_high": 0.8,
+      "drain_rate_boredom_low": 0.4,
+      "boredom_high_threshold": 60,
+      "boredom_low_threshold": 30,
+      "warning_threshold": 85,
+      "_notes": "Fills faster when crew is bored. A full bar brings an event."
+    }
+  },
+  "lose_conditions": {
+    "energy_zero_ticks_limit": 15,
+    "boredom_max_ticks_limit": 20,
+    "_notes": "Seconds at zero energy or max boredom before base fails."
+  },
+  "grace_and_recovery": {
+    "start_grace_period_ticks": 60,
+    "major_event_recovery_ticks": 45,
+    "_notes": "Peaceful seconds at start and quiet time after major events."
+  },
+  "economy": {
+    "demolish_refund_percent": 0.5,
+    "_notes": "Refund percentage given back when removing a building."
+  }
+}

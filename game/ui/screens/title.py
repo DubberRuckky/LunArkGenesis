@@ -19,9 +19,9 @@ from game.constants import (
     FONT_SIZE_TITLE,
     INTERNAL_HEIGHT,
     INTERNAL_WIDTH,
-    SAVEGAME_FILE,
     SCREEN_SETTINGS,
 )
+from game.logic.save_load import any_save_exists
 from game.ui.widgets import Button
 
 
@@ -41,8 +41,8 @@ class TitleScreen:
             for _ in range(70)
         ]
 
-        # Has existing savegame?
-        self.has_save = SAVEGAME_FILE.exists()
+        # Has existing savegame? (checks all three slots)
+        self.has_save = any_save_exists()
 
         # Build menu buttons centered vertically
         btn_w = 90
@@ -122,7 +122,7 @@ class TitleScreen:
 
     def update(self, dt: float) -> None:
         """Update save state check if file was created or removed."""
-        self.has_save = SAVEGAME_FILE.exists()
+        self.has_save = any_save_exists()
         self.buttons[1].enabled = self.has_save
 
     def draw(self, surface: pygame.Surface) -> None:

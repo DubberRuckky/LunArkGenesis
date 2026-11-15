@@ -120,6 +120,11 @@ class Button:
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 if self.pressed and self.hovered:
                     self.clicked = True
+                    try:
+                        from game.audio import audio
+                        audio.play("click")
+                    except Exception:
+                        pass
                     if self.callback:
                         self.callback()
                 self.pressed = False

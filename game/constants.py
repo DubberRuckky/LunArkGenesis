@@ -20,6 +20,9 @@ DATA_DIR: Path = ROOT_DIR / "game" / "data"
 SETTINGS_FILE: Path = SAVE_DIR / "settings.json"
 SAVEGAME_FILE: Path = SAVE_DIR / "savegame.json"
 STARTUP_FILE: Path = DATA_DIR / "startup.json"
+BALANCE_FILE: Path = DATA_DIR / "balance.json"
+TEXT_FILE: Path = DATA_DIR / "text.json"
+THEME_FILE: Path = DATA_DIR / "theme.json"
 
 # Font: Departure Mono by Helena Zhang (SIL Open Font License 1.1)
 # Designed on an 11 px grid. For pixel-perfect rendering with crisp, unblurred edges,
@@ -286,5 +289,8 @@ SCREEN_TITLE: str = "title"
 SCREEN_SETTINGS: str = "settings"
 SCREEN_CUTSCENE: str = "cutscene"
 SCREEN_PLAY: str = "play"
+SCREEN_GAME: str = "game"
 SCREEN_PAUSE: str = "pause"
+SCREEN_WIN: str = "win"
+SCREEN_LOSE: str = "lose"
 SCREEN_END: str = "end"

@@ -280,6 +280,30 @@ class AssetManager:
         """
         return sorted(list(self.missing))
 
+    def get_icon(self, index: int) -> pygame.Surface:
+        """Extract a 16x16 icon from the shared icon spritesheet by index."""
+        sheet = self.load_image("icons", default_size=(128, 48))
+        cols = 8
+        row = index // cols
+        col = index % cols
+        x = col * 16
+        y = row * 16
+        if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
+            return sheet.subsurface(pygame.Rect(x, y, 16, 16))
+        return create_placeholder(16, 16, f"i{index}")
+
+    def get_tile(self, index: int) -> pygame.Surface:
+        """Extract a 16x16 terrain tile from the tileset spritesheet by index."""
+        sheet = self.load_image("tileset", default_size=(128, 48))
+        cols = 8
+        row = index // cols
+        col = index % cols
+        x = col * 16
+        y = row * 16
+        if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
+            return sheet.subsurface(pygame.Rect(x, y, 16, 16))
+        return create_placeholder(16, 16, f"t{index}")
+
 
 # Global singleton instance
 assets = AssetManager()

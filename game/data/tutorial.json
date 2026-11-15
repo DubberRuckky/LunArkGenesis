@@ -1,0 +1,140 @@
+{
+  "_notes": "Tutorial script, steps, Lieutenant mentor dialogues, and science glossary for LunArk: Genesis.",
+  "welcome": {
+    "dialogue": [
+      "Welcome to the Moon, Commander!",
+      "I am Lieutenant Vance. Let us set up your mission."
+    ],
+    "name_prompt": "Enter your Commander callsign:",
+    "default_name": "Commander",
+    "max_name_length": 12,
+    "expression": 1
+  },
+  "steps": [
+    {
+      "step_id": 1,
+      "title": "Five Base Indicators",
+      "target": "hud",
+      "expression": 0,
+      "dialogue": [
+        "These five bars track base health.",
+        "Energy powers rooms. Science unlocks tech.",
+        "Boredom tracks crew mood. Revenue is your funds.",
+        "The Event bar warns of incoming danger."
+      ]
+    },
+    {
+      "step_id": 2,
+      "title": "The Habitat Pod",
+      "target": "habitat",
+      "expression": 1,
+      "camera_col": 20,
+      "dialogue": [
+        "This is our Habitat Pod.",
+        "Our astronauts live here.",
+        "They need electricity, good food, and fun!"
+      ]
+    },
+    {
+      "step_id": 3,
+      "title": "Build a Fuel Cell",
+      "target": "build_fuel_cell",
+      "category": "generator",
+      "building_id": "fuel_cell",
+      "expression": 2,
+      "dialogue": [
+        "We need electricity right away.",
+        "Open Generator in your Build Tray.",
+        "Place a Fuel Cell on the lunar ground!"
+      ]
+    },
+    {
+      "step_id": 4,
+      "title": "Build a Datacentre",
+      "target": "build_datacentre",
+      "category": "cashflow",
+      "building_id": "datacentre",
+      "expression": 0,
+      "dialogue": [
+        "Expanding our base costs money.",
+        "Select Cashflow in the Build Tray.",
+        "Place a Datacentre to earn Revenue each second."
+      ]
+    },
+    {
+      "step_id": 5,
+      "title": "Lunar Day and Night",
+      "target": "day_night_clock",
+      "expression": 2,
+      "dialogue": [
+        "Watch the day and night clock.",
+        "The Sun shines for 180 seconds, then darkness falls.",
+        "Solar stops at night, and heaters use extra power."
+      ]
+    },
+    {
+      "step_id": 6,
+      "title": "The Mission Goal",
+      "target": "goal_planet_stats",
+      "category": "science",
+      "building_id": "planet_stats",
+      "expression": 1,
+      "dialogue": [
+        "Your goal is to build Planet Stats and survive 3 cycles.",
+        "Research tech and keep your crew happy.",
+        "Good luck, Commander! You are ready to lead."
+      ]
+    }
+  ],
+  "completion": {
+    "dialogue": [
+      "Outstanding preparation, Commander!",
+      "You have earned the LunArk Cadet Wings badge.",
+      "Base control is now in your hands. Good luck!"
+    ],
+    "expression": 3,
+    "badge_title": "LunArk Cadet Wings"
+  },
+  "glossary": [
+    {
+      "term": "Helium-3",
+      "definition": "A rare gas on the Moon used for clean nuclear fusion.",
+      "verify": true
+    },
+    {
+      "term": "Regolith",
+      "definition": "Fine lunar soil that shields buildings from deadly space radiation.",
+      "verify": true
+    },
+    {
+      "term": "Solar Flare",
+      "definition": "A powerful burst of high-energy radiation released by the Sun.",
+      "verify": true
+    },
+    {
+      "term": "Micrometeorite",
+      "definition": "A tiny space rock travelling faster than a bullet.",
+      "verify": true
+    },
+    {
+      "term": "Fuel Cell",
+      "definition": "A clean generator joining hydrogen and oxygen into electricity and water.",
+      "verify": true
+    },
+    {
+      "term": "Nuclear Plant",
+      "definition": "A fission power station providing massive, continuous electricity day and night.",
+      "verify": true
+    },
+    {
+      "term": "Lunar Night",
+      "definition": "A freezing two-week dark period on the Moon without sunlight.",
+      "verify": true
+    },
+    {
+      "term": "Photovoltaics",
+      "definition": "Special panels that convert natural sunlight directly into electrical power.",
+      "verify": true
+    }
+  ]
+}

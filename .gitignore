@@ -220,8 +220,10 @@ __marimo__/
 .streamlit/secrets.toml
 
 # LunArk: Genesis
-saves/
+saves/*
+!saves/.gitkeep
 screenshots/
+*.pyc
 .DS_Store
 Thumbs.db
 desktop.ini
