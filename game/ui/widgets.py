@@ -36,6 +36,87 @@ from game.constants import (
 )
 
 
+def wrap_text_to_width(text: str, font: pygame.font.Font, max_width: int) -> list[str]:
+    """Wrap a text string into multiple lines so no line exceeds max_width."""
+    if not text:
+        return []
+    words = text.split(" ")
+    lines: list[str] = []
+    current_line = ""
+
+    for word in words:
+        test_line = f"{current_line} {word}".strip()
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return lines
+
+
+def build_text_box(
+    text: str | list[str],
+    font: pygame.font.Font,
+    max_width: int | None = None,
+    nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = None,
+    bg_color: tuple[int, int, int, int] | tuple[int, int, int] | None = None,
+    text_color: tuple[int, int, int] = COLOR_WHITE,
+    padding: int | None = None,
+) -> pygame.Surface:
+    """Measure text, add theme padding, round up to whole pixels, and render with 9-slice frame.
+
+    Shared helper for tray cards, banners, tooltips, info panel, dialogue, and buttons.
+    """
+    from game.logic.data import load_theme
+    import math
+
+    theme_ui = load_theme().get("ui", {})
+    pad = int(padding if padding is not None else theme_ui.get("padding", 6))
+    limit_w = int(max_width if max_width is not None else theme_ui.get("max_width", 260))
+
+    # Normalize into lines, wrapping if any line exceeds limit_w
+    raw_lines: list[str] = [text] if isinstance(text, str) else list(text)
+    wrapped_lines: list[str] = []
+    for line in raw_lines:
+        wrapped_lines.extend(wrap_text_to_width(str(line), font, limit_w))
+
+    if not wrapped_lines:
+        wrapped_lines = [""]
+
+    text_w = max(font.size(line)[0] for line in wrapped_lines)
+    line_h = font.get_linesize()
+    text_h = len(wrapped_lines) * line_h
+
+    # Add padding and round up to whole pixels
+    total_w = int(math.ceil(text_w + pad * 2))
+    total_h = int(math.ceil(text_h + pad * 2))
+
+    box_w = max(16, total_w)
+    box_h = max(16, total_h)
+
+    surf = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+
+    # 1. Background fill
+    fill_col = bg_color if bg_color is not None else tuple(theme_ui.get("panel_bg", [20, 22, 32, 225]))
+    surf.fill(fill_col)
+
+    # 2. 9-slice frame
+    if nine_slice is not None:
+        nine_slice(surf, surf.get_rect())
+
+    # 3. Text lines
+    curr_y = pad
+    for line in wrapped_lines:
+        line_surf = font.render(line, False, text_color)
+        surf.blit(line_surf, (pad, curr_y))
+        curr_y += line_h
+
+    return surf
+
+
 class Label:
     """Simple text label rendered at whole-pixel coordinates."""
 
@@ -130,24 +211,35 @@ class Button:
                 self.pressed = False
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Render button based on current state."""
+        """Render button based on current state using button.png 9-slice states."""
         if not self.enabled:
+            st = 3
             bg_col = COLOR_BUTTON_DISABLED
             txt_col = COLOR_BUTTON_TEXT_DISABLED
         elif self.pressed:
+            st = 2
             bg_col = COLOR_BUTTON_PRESSED
             txt_col = COLOR_BUTTON_TEXT
         elif self.hovered:
+            st = 1
             bg_col = COLOR_BUTTON_HOVER
             txt_col = COLOR_WHITE
         else:
+            st = 0
             bg_col = COLOR_BUTTON_NORMAL
             txt_col = COLOR_BUTTON_TEXT
 
-        if self.nine_slice:
+        # Base background fill
+        pygame.draw.rect(surface, bg_col, self.rect)
+
+        # 9-slice frame from button.png (4 states side by side, 8px corners)
+        from game.assets import assets
+        btn_slices = assets.get_button_slices()
+        if btn_slices and st < len(btn_slices):
+            btn_slices[st](surface, self.rect)
+        elif self.nine_slice:
             self.nine_slice(surface, self.rect)
         else:
-            pygame.draw.rect(surface, bg_col, self.rect)
             border_col = COLOR_BUTTON_DISABLED if not self.enabled else COLOR_BUTTON_BORDER
             pygame.draw.rect(surface, border_col, self.rect, 1)
 
@@ -194,15 +286,22 @@ class Toggle:
                         self.callback(self.value)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Render toggle switch pill and label."""
-        pill_bg = COLOR_TOGGLE_ON if self.value else COLOR_TOGGLE_OFF
-        pygame.draw.rect(surface, pill_bg, self.pill_rect, border_radius=6)
-        pygame.draw.rect(surface, (40, 40, 50), self.pill_rect, 1, border_radius=6)
+        """Render toggle switch pill and label using toggle.png."""
+        from game.assets import assets
+        toggle_surf = assets.load_image("toggle", default_size=(48, 12))
+        if "toggle" not in assets.missing and toggle_surf.get_width() >= 48:
+            sub_x = 24 if self.value else 0
+            sub = toggle_surf.subsurface(pygame.Rect(sub_x, 0, 24, 12))
+            surface.blit(sub, self.pill_rect.topleft)
+        else:
+            pill_bg = COLOR_TOGGLE_ON if self.value else COLOR_TOGGLE_OFF
+            pygame.draw.rect(surface, pill_bg, self.pill_rect, border_radius=6)
+            pygame.draw.rect(surface, (40, 40, 50), self.pill_rect, 1, border_radius=6)
 
-        # Sliding circular knob (10x10)
-        knob_x = self.pill_rect.right - 11 if self.value else self.pill_rect.left + 1
-        knob_rect = pygame.Rect(knob_x, self.pill_rect.top + 1, 10, 10)
-        pygame.draw.ellipse(surface, COLOR_TOGGLE_KNOB, knob_rect)
+            # Sliding circular knob (10x10)
+            knob_x = self.pill_rect.right - 11 if self.value else self.pill_rect.left + 1
+            knob_rect = pygame.Rect(knob_x, self.pill_rect.top + 1, 10, 10)
+            pygame.draw.ellipse(surface, COLOR_TOGGLE_KNOB, knob_rect)
 
         # Label text vertically aligned with pill center
         surface.blit(self.text_surf, (self.pill_rect.right + 6, self.y))
@@ -350,11 +449,13 @@ class ProgressBar:
 
 
 class Panel:
-    """Rounded or bordered background surface for grouping interface elements."""
+    """Rounded or bordered background surface for grouping interface elements using panel.png."""
 
     def __init__(self, x: int, y: int, w: int, h: int) -> None:
         self.rect = pygame.Rect(int(x), int(y), int(w), int(h))
-        self.nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = None
+        from game.assets import assets, make_nine_slice
+        panel_surf = assets.load_image("panel", default_size=(24, 24))
+        self.nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = make_nine_slice(panel_surf, corner=8)
 
     def set_nine_slice(self, draw_func: Callable[[pygame.Surface, pygame.Rect], None] | None) -> None:
         """Set optional custom 9-slice drawer."""
@@ -362,18 +463,17 @@ class Panel:
 
     def draw(self, surface: pygame.Surface) -> None:
         """Render panel onto destination surface."""
+        panel_surf = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        panel_surf.fill(COLOR_PANEL_BG)
+        surface.blit(panel_surf, self.rect.topleft)
         if self.nine_slice:
             self.nine_slice(surface, self.rect)
         else:
-            # Code-drawn rounded box with alpha
-            panel_surf = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
-            panel_surf.fill(COLOR_PANEL_BG)
-            pygame.draw.rect(panel_surf, COLOR_PANEL_BORDER, panel_surf.get_rect(), 1, border_radius=4)
-            surface.blit(panel_surf, self.rect.topleft)
+            pygame.draw.rect(surface, COLOR_PANEL_BORDER, self.rect, 1, border_radius=4)
 
 
 class DialogueBox:
-    """Story dialogue box supporting typewriter text and advance cues."""
+    """Story dialogue box supporting typewriter text and advance cues using dialogue_box.png."""
 
     def __init__(self, x: int, y: int, w: int, h: int, font: pygame.font.Font) -> None:
         self.rect = pygame.Rect(int(x), int(y), int(w), int(h))
@@ -386,6 +486,10 @@ class DialogueBox:
         self.text_complete = False
         self.finished = False
         self.blink_timer = 0.0
+
+        from game.assets import assets, make_nine_slice
+        box_surf = assets.load_image("dialogue_box", default_size=(24, 24))
+        self.nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = make_nine_slice(box_surf, corner=8)
 
     def set_text(self, text: str, speed: float = 0.03) -> None:
         """Start typewriter effect with given string."""
@@ -431,15 +535,19 @@ class DialogueBox:
         """Render dialogue background, wrapped typewriter text, and advance cue."""
         box_surf = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         box_surf.fill(COLOR_DIALOGUE_BG)
-        pygame.draw.rect(box_surf, COLOR_DIALOGUE_BORDER, box_surf.get_rect(), 1, border_radius=4)
         surface.blit(box_surf, self.rect.topleft)
+
+        if self.nine_slice:
+            self.nine_slice(surface, self.rect)
+        else:
+            pygame.draw.rect(surface, COLOR_DIALOGUE_BORDER, self.rect, 1, border_radius=4)
 
         # Word wrap typewriter text
         visible_str = self.full_text[:self.displayed_chars]
         words = visible_str.split(" ")
         lines: list[str] = []
         cur_line = ""
-        max_w = self.rect.width - 20
+        max_w = self.rect.width - 24
 
         for word in words:
             test_line = f"{cur_line} {word}".strip()
@@ -458,10 +566,15 @@ class DialogueBox:
             surface.blit(line_surf, (self.rect.x + 10, line_y))
             line_y += self.font.get_linesize()
 
-        # Blinking prompt arrow when text is ready to advance
+        # Blinking prompt arrow when text is ready to advance (uses next_arrow.png if available)
         if self.text_complete and int(self.blink_timer * 3) % 2 == 0:
-            arrow = self.font.render(">", False, (220, 220, 240))
-            surface.blit(arrow, (self.rect.right - 14, self.rect.bottom - 14))
+            from game.assets import assets
+            arrow_surf = assets.get_next_arrow(int(self.blink_timer * 30))
+            if arrow_surf:
+                surface.blit(arrow_surf, (self.rect.right - 14, self.rect.bottom - 12))
+            else:
+                arrow = self.font.render(">", False, (220, 220, 240))
+                surface.blit(arrow, (self.rect.right - 14, self.rect.bottom - 14))
 
 
 class TextInput:
@@ -527,21 +640,31 @@ class TextInput:
 
 
 class Tooltip:
-    """Contextual floating info balloon anchored to mouse cursor coordinates."""
+    """Contextual floating info balloon anchored to mouse cursor coordinates using panel.png."""
 
     def __init__(self, font: pygame.font.Font) -> None:
         self.font = font
-        self.text = ""
+        self.lines: list[str] = []
         self.visible = False
         self.x = 0
         self.y = 0
+        from game.assets import assets, make_nine_slice
+        panel_surf = assets.load_image("panel", default_size=(24, 24))
+        self.nine_slice: Callable[[pygame.Surface, pygame.Rect], None] | None = make_nine_slice(panel_surf, corner=8)
 
     def show(self, text: str, x: int, y: int) -> None:
         """Position and show tooltip."""
-        self.text = text
+        self.lines = [text] if text else []
         self.x = int(x)
         self.y = int(y)
-        self.visible = bool(text)
+        self.visible = bool(self.lines)
+
+    def show_multiline(self, lines: list[str], pos: tuple[int, int]) -> None:
+        """Position and show tooltip with multiple lines of text."""
+        self.lines = [str(line) for line in lines if line]
+        self.x = int(pos[0])
+        self.y = int(pos[1])
+        self.visible = bool(self.lines)
 
     def hide(self) -> None:
         """Hide tooltip."""
@@ -549,13 +672,19 @@ class Tooltip:
 
     def draw(self, surface: pygame.Surface) -> None:
         """Render tooltip bubble clamped inside canvas boundaries."""
-        if not self.visible or not self.text:
+        if not self.visible or not self.lines:
             return
 
-        txt_surf = self.font.render(self.text, False, COLOR_WHITE)
-        pad = 4
-        w = txt_surf.get_width() + pad * 2
-        h = txt_surf.get_height() + pad * 2
+        box_surf = build_text_box(
+            self.lines,
+            self.font,
+            max_width=220,
+            nine_slice=self.nine_slice,
+            bg_color=COLOR_TOOLTIP_BG,
+            padding=4,
+        )
+        w = box_surf.get_width()
+        h = box_surf.get_height()
 
         # Position slightly offset from mouse
         tx = self.x + 8
@@ -567,10 +696,4 @@ class Tooltip:
         if ty + h > INTERNAL_HEIGHT - 2:
             ty = self.y - h - 2
 
-        tip_rect = pygame.Rect(max(2, tx), max(2, ty), w, h)
-        box_surf = pygame.Surface((w, h), pygame.SRCALPHA)
-        box_surf.fill(COLOR_TOOLTIP_BG)
-        pygame.draw.rect(box_surf, COLOR_TOOLTIP_BORDER, box_surf.get_rect(), 1)
-
-        surface.blit(box_surf, tip_rect.topleft)
-        surface.blit(txt_surf, (tip_rect.x + pad, tip_rect.y + pad))
+        surface.blit(box_surf, (max(2, tx), max(2, ty)))

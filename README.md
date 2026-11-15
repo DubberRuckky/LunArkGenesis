@@ -278,6 +278,13 @@ Every subsequent game feature, simulation logic module, building economy, day/ni
   - Wired full suite of audio hooks (button click, building placement, demolish, warnings, nightfall, win, lose).
   - Built headless simulation tool (`tools/simulate.py`) for rapid 1000-tick balance analysis.
   - Added test suite `tests/test_polish_and_simulation.py`. All 96 tests passing.
+- **Fix Pass — UI Polish, Missing-Art Frames, Dynamic Art Wiring, Auto-Sized Text Boxes, Tutorial Declutter** *(continuation — Gemini Flash in Antigravity)*:
+  - Resolved ternary tuple syntax error in `build_tray.py` hover borders and verified every screen draws headless across mouse positions.
+  - Re-layered HUD bar drawing (background -> fill -> frame -> icon & badge -> number) and converted frame placeholders to hollow outlines.
+  - Wired asset loading for buildings (`img/buildings/<id>.png`), 9-slice panels/buttons/dialogue, cursor, event art, and sparks/dust FX.
+  - Replaced hardcoded text truncations with shared `build_text_box` helper and tray card auto-fit logic.
+  - Embedded dimmed live game screen behind tutorial walkthrough and aligned prompt text without button collision.
+  - All 101 tests passing and headless smoke test clean.
 
 ---
 

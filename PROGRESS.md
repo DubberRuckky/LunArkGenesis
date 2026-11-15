@@ -1,9 +1,9 @@
 # LunArk: Genesis — Project Progress Tracker
 
 ## Current Status
-- **Current Stage**: Stage 10 - Polish, audio hooks and accessibility (quality of life)
-- **Status**: Completed (96 unit & integration tests passing)
-- **Next Stage**: All 10 Stages Completed — Ready for Team Review & Event Presentation!
+- **Current Stage**: Fix Pass Completed (Tasks 1–5: Crash fix, Visible bars with hollow placeholders, Dynamic asset wiring, Auto-sized text boxes, Tutorial declutter)
+- **Status**: Completed (101 unit & integration tests passing)
+- **Next Stage**: All 10 Stages + Fix Pass Completed — Ready for Team Review & Event Presentation!
 
 ## Stage Roadmap Overview
 - [x] **Stage 1**: Foundation update (Audit, Data Layer, Tick Clock, Stub Screens, Logs)

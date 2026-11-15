@@ -94,3 +94,11 @@ All pixel art and visual illustrations were created by human artists in **Asepri
   - Built interactive keyboard shortcuts guide overlay (`?` / `/` key) and verified all click targets meet or exceed 16×16px.
   - Created headless balance simulation tool (`tools/simulate.py`) running 1000 ticks with zero pygame dependencies for economy tuning.
   - Added unit test suite `tests/test_polish_and_simulation.py` (4 tests). All 96 tests passing.
+
+- **2026-11-15 (Fix Pass — UI Polish, Missing-Art Frames, Dynamic Art Wiring, Auto-Sized Text Boxes, Tutorial Declutter)** *(continuation — written by Gemini Flash in Antigravity)*:
+  - Fixed tuple nesting bug in `build_tray.py` hover border color ternaries causing crash; added comprehensive headless screen draw test.
+  - Made missing-art frame placeholders transparent-center outlines, corrected HUD bar draw layering (bg -> fill -> frame -> icon -> text), and shifted colorblind badges clear of bars.
+  - Wired full asset loading for buildings, 9-slice UI textures (`panel`, `button`, `dialogue_box`, `toggle`, `next_arrow`, `cursor`), event illustrations, and FX sparks/dust with code fallbacks.
+  - Removed all hard character-count truncations and implemented shared `build_text_box` helper and card name auto-fitting ensuring all building names fit in tray cards.
+  - Integrated live game background under dimmed tutorial overlay and positioned "SPACE or ENTER" hint without button overlap.
+  - Added unit tests across all 5 fix tasks (now 101 tests passing). Headless smoke test clean.

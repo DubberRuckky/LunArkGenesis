@@ -122,3 +122,71 @@ def test_game_automatic_win_and_lose_transitions(app_instance: App) -> None:
     assert isinstance(current, LoseScreen)
     assert current.cause == "energy"
     assert current.hint != ""
+
+
+def test_all_screens_draw_headless_at_mouse_positions(app_instance: App) -> None:
+    """Verifies that EVERY screen renders without exceptions across various mouse positions.
+
+    Tests Title, Intro, Game, Pause, Settings, Win, and Lose screens,
+    specifically testing hover and non-hover states for all interactive widgets.
+    """
+    from game.constants import SCREEN_SETTINGS
+
+    screens_to_test = [
+        (SCREEN_TITLE, TitleScreen),
+        ("intro", IntroScreen),
+        (SCREEN_GAME, GameScreen),
+        (SCREEN_PAUSE, PauseScreen),
+        (SCREEN_SETTINGS, None),
+        (SCREEN_WIN, WinScreen),
+        (SCREEN_LOSE, LoseScreen),
+    ]
+
+    canvas = app_instance.display.canvas
+
+    for screen_name, expected_cls in screens_to_test:
+        app_instance.set_screen(screen_name)
+        screen = app_instance.get_current_screen()
+        if expected_cls:
+            assert isinstance(screen, expected_cls)
+
+        # Collect key points to sample: corners, center, and every button center
+        positions: list[tuple[int, int]] = [(0, 0), (240, 135), (479, 269), (10, 10), (400, 250)]
+
+        # Find buttons or rects on the screen
+        if hasattr(screen, "buttons"):
+            for btn in getattr(screen, "buttons", []):
+                if hasattr(btn, "rect"):
+                    positions.append(btn.rect.center)
+                    # Also sample just outside the button to test non-hover
+                    positions.append((btn.rect.x - 2, btn.rect.y - 2))
+
+        if hasattr(screen, "build_tray"):
+            tray = screen.build_tray
+            for r in getattr(tray, "tab_rects", {}).values():
+                positions.append(r.center)
+            if hasattr(tray, "demolish_rect"):
+                positions.append(tray.demolish_rect.center)
+            for cr in getattr(tray, "card_rects", []):
+                positions.append(cr.center)
+
+        if hasattr(screen, "hud"):
+            hud = screen.hud
+            for br in getattr(hud, "bar_rects", {}).values():
+                positions.append(br.center)
+            for btn in getattr(hud, "speed_buttons", []):
+                if "rect" in btn:
+                    positions.append(btn["rect"].center)
+
+        for pos in positions:
+            # Mock canvas mouse pos on app
+            app_instance.get_canvas_mouse_pos = lambda p=pos: p  # type: ignore[assignment]
+
+            # Update & handle events with this mouse position
+            motion_event = pygame.event.Event(pygame.MOUSEMOTION, pos=pos)
+            screen.handle_events([motion_event])
+            screen.update(0.05)
+
+            # Draw onto canvas - must not raise any exception (e.g. ValueError: invalid color)
+            screen.draw(canvas)
+

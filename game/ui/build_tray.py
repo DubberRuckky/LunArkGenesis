@@ -47,6 +47,9 @@ class BuildTray:
 
         # Tray coordinates: 50px tall at bottom
         self.tray_rect = pygame.Rect(0, INTERNAL_HEIGHT - 50, INTERNAL_WIDTH, 50)
+        from game.assets import make_nine_slice
+        panel_surf = assets.load_image("panel", default_size=(24, 24))
+        self.nine_slice = make_nine_slice(panel_surf, corner=8)
 
         # Tab button rects
         self.tab_rects: dict[str, pygame.Rect] = {
@@ -61,10 +64,40 @@ class BuildTray:
 
         # 3 tier card rects in the tray
         self.card_rects: list[pygame.Rect] = [
-            pygame.Rect(4, INTERNAL_HEIGHT - 25, 126, 22),
-            pygame.Rect(134, INTERNAL_HEIGHT - 25, 126, 22),
-            pygame.Rect(264, INTERNAL_HEIGHT - 25, 126, 22),
+            pygame.Rect(4, INTERNAL_HEIGHT - 25, 154, 22),
+            pygame.Rect(162, INTERNAL_HEIGHT - 25, 154, 22),
+            pygame.Rect(320, INTERNAL_HEIGHT - 25, 154, 22),
         ]
+
+    def _render_card_name(
+        self,
+        name: str,
+        max_w: int,
+        max_h: int,
+        color: tuple[int, int, int],
+    ) -> pygame.Surface:
+        """Render card name fitting within max_w and max_h using appropriate font size or wrapping."""
+        # 1. Try standard font if it fits
+        w, h = self.font.size(name)
+        if w <= max_w:
+            return self.font.render(name, False, color)
+
+        # 2. Try smaller font sizes (10, 9, 8)
+        for sz in (10, 9, 8):
+            f = assets.get_font(sz)
+            if f.size(name)[0] <= max_w:
+                return f.render(name, False, color)
+
+        # 3. If still exceeds, wrap text to fit max_w using small font
+        f = assets.get_font(8)
+        from game.ui.widgets import wrap_text_to_width
+        lines = wrap_text_to_width(name, f, max_w)
+        surf = pygame.Surface((max_w, max_h), pygame.SRCALPHA)
+        line_h = f.get_linesize()
+        for idx, line in enumerate(lines[:2]):
+            line_surf = f.render(line, False, color)
+            surf.blit(line_surf, (0, idx * line_h))
+        return surf
 
     def get_category_cards(self, category: str) -> list[dict[str, Any]]:
         """Fetch list of 3 building definitions for the given category from JSON catalogue."""
@@ -161,11 +194,11 @@ class BuildTray:
         current_revenue: float = 0.0,
     ) -> None:
         """Render the 50px bottom build tray, category tabs, tier cards, and lock icons."""
-        # Tray background (dark panel)
+        # Tray background (dark panel with 9-slice frame from panel.png)
         tray_surf = pygame.Surface((INTERNAL_WIDTH, 50), pygame.SRCALPHA)
         tray_surf.fill((18, 20, 28, 240))
-        surface.blit(tray_surf, (0, INTERNAL_HEIGHT - 50))
-        pygame.draw.line(surface, (70, 75, 95), (0, INTERNAL_HEIGHT - 50), (INTERNAL_WIDTH, INTERNAL_HEIGHT - 50), 1)
+        surface.blit(tray_surf, self.tray_rect.topleft)
+        self.nine_slice(surface, self.tray_rect)
 
         # 1. Category Tabs
         cat_icons = {
@@ -174,13 +207,19 @@ class BuildTray:
             "activity": ICON.get("cat_activity", 7),
             "science": ICON.get("cat_science", 8),
         }
+        cat_labels = {
+            "generator": "Power",
+            "cashflow": "Cash",
+            "activity": "Fun",
+            "science": "Sci",
+        }
 
         for cat, r in self.tab_rects.items():
             is_active = (self.active_category == cat and not self.demolish_mode)
             is_hover = r.collidepoint(mouse_pos)
 
             bg_col = COLOR_BUTTON_PRESSED if is_active else (COLOR_BUTTON_HOVER if is_hover else COLOR_BUTTON_NORMAL)
-            border_col = (255, 220, 50) if is_active else (140, 145, 160 if is_hover else (80, 85, 100))
+            border_col = (255, 220, 50) if is_active else ((140, 145, 160) if is_hover else (80, 85, 100))
 
             pygame.draw.rect(surface, bg_col, r)
             pygame.draw.rect(surface, border_col, r, 1)
@@ -189,7 +228,7 @@ class BuildTray:
             icon_surf = assets.get_icon(cat_icons.get(cat, 0))
             surface.blit(icon_surf, (r.x + 2, r.y + 1))
 
-            short_lbl = cat[:3].capitalize()
+            short_lbl = cat_labels.get(cat, cat.capitalize())
             txt = self.font.render(short_lbl, False, COLOR_WHITE)
             surface.blit(txt, (r.x + 19, r.y + 3))
 
@@ -197,7 +236,7 @@ class BuildTray:
         is_demo_active = self.demolish_mode
         demo_hover = self.demolish_rect.collidepoint(mouse_pos)
         demo_bg = (160, 40, 40) if is_demo_active else (COLOR_BUTTON_HOVER if demo_hover else COLOR_BUTTON_NORMAL)
-        demo_border = COLOR_ERROR if is_demo_active else (160, 165, 180 if demo_hover else (90, 95, 110))
+        demo_border = COLOR_ERROR if is_demo_active else ((160, 165, 180) if demo_hover else (90, 95, 110))
 
         pygame.draw.rect(surface, demo_bg, self.demolish_rect)
         pygame.draw.rect(surface, demo_border, self.demolish_rect, 1)
@@ -243,25 +282,36 @@ class BuildTray:
             if not unlocked:
                 lock_surf = assets.get_icon(ICON.get("locked", 13))
                 surface.blit(lock_surf, (r.x + 3, r.y + 3))
-                name_txt = self.font.render(card["name"][:9], False, (140, 140, 150))
-                surface.blit(name_txt, (r.x + 20, r.y + 4))
 
                 cost_txt = self.font.render(f"${card['cost']}", False, (120, 120, 130))
-                surface.blit(cost_txt, (r.x + r.width - cost_txt.get_width() - 4, r.y + 4))
-            else:
-                name_txt = self.font.render(card["name"][:12], False, COLOR_WHITE)
-                cost_txt = self.font.render(f"${card['cost']}", False, (80, 220, 80))
+                cost_x = r.x + r.width - cost_txt.get_width() - 4
+                surface.blit(cost_txt, (cost_x, r.y + 4))
 
-                surface.blit(name_txt, (r.x + 4, r.y + 4))
-                surface.blit(cost_txt, (r.x + r.width - cost_txt.get_width() - 4, r.y + 4))
+                avail_w = cost_x - (r.x + 20) - 2
+                name_surf = self._render_card_name(card["name"], avail_w, r.height - 4, (140, 140, 150))
+                surface.blit(name_surf, (r.x + 20, r.y + 4))
+            else:
+                cost_txt = self.font.render(f"${card['cost']}", False, (80, 220, 80))
+                cost_x = r.x + r.width - cost_txt.get_width() - 4
+                surface.blit(cost_txt, (cost_x, r.y + 4))
+
+                avail_w = cost_x - (r.x + 4) - 2
+                name_surf = self._render_card_name(card["name"], avail_w, r.height - 4, COLOR_WHITE)
+                surface.blit(name_surf, (r.x + 4, r.y + 4))
 
         # 4. Lock requirement message banner if hovering or clicking locked card
         active_lock_msg = self.lock_message or hovered_card_lock_msg
         if active_lock_msg:
-            msg_surf = self.font.render(active_lock_msg, False, (255, 200, 80))
-            bw = msg_surf.get_width() + 12
+            from game.ui.widgets import build_text_box
+            msg_box = build_text_box(
+                active_lock_msg,
+                self.font,
+                max_width=280,
+                nine_slice=self.nine_slice,
+                bg_color=(30, 25, 20, 230),
+                text_color=(255, 200, 80),
+                padding=3,
+            )
             bx = 190
             by = INTERNAL_HEIGHT - 47
-            pygame.draw.rect(surface, (30, 25, 20), (bx, by, bw, 16))
-            pygame.draw.rect(surface, (255, 180, 40), (bx, by, bw, 16), 1)
-            surface.blit(msg_surf, (bx + 6, by + 2))
+            surface.blit(msg_box, (bx, by))

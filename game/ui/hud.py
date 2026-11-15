@@ -155,21 +155,19 @@ class HUD:
             if rect.collidepoint(mouse_pos):
                 hovered_key = key
 
-            # Icon
-            icon_idx = ICON.get(key, 0)
-            icon_surf = assets.get_icon(icon_idx)
-            surface.blit(icon_surf, (rect.x, rect.y + 2))
-
-            # Progress Bar container
+            # Progress Bar container coordinates
             bar_w = 26
             bar_h = 10
             bar_x = rect.x + 17
             bar_y = rect.y + 5
             bar_rect = pygame.Rect(bar_x, bar_y, bar_w, bar_h)
 
+            # Draw Order: background, fill, frame, icon, number
+
+            # 1. Background
             pygame.draw.rect(surface, COLOR_BAR_BG, bar_rect)
 
-            # Fill bar with smooth interpolated ratio
+            # 2. Fill (using smooth interpolated ratio)
             ratio = self.display_ratios.get(key, info["ratio"])
             fill_w = max(0, min(bar_w - 2, int((bar_w - 2) * ratio)))
             if self.high_contrast:
@@ -183,19 +181,23 @@ class HUD:
             if fill_w > 0:
                 pygame.draw.rect(surface, color, (bar_x + 1, bar_y + 1, fill_w, bar_h - 2))
 
-            # 9-slice frame
+            # 3. Frame
             self.draw_bar_frame(surface, bar_rect)
-
-            # Accessibility shape icon badge at top-left corner of bar frame
-            shape_char = indicator_shapes.get(key, "")
-            if shape_char:
-                shape_surf = self.font.render(shape_char, False, (220, 225, 235))
-                surface.blit(shape_surf, (bar_x - 3, bar_y - 4))
-
             if info["warning"] and is_flashing:
                 pygame.draw.rect(surface, COLOR_ERROR, bar_rect, 1)
 
-            # Value text
+            # 4. Icon & color-blind shape badge (positioned beside/above icon, never overlapping bar)
+            icon_idx = ICON.get(key, 0)
+            icon_surf = assets.get_icon(icon_idx)
+            surface.blit(icon_surf, (rect.x, rect.y + 2))
+
+            shape_char = indicator_shapes.get(key, "")
+            if shape_char:
+                shape_surf = self.font.render(shape_char, False, (220, 225, 235))
+                # Positioned at rect.x, above icon, completely outside bar_rect
+                surface.blit(shape_surf, (rect.x, rect.y - 2))
+
+            # 5. Number
             val_txt = self.font.render(str(info["value"]), False, COLOR_WHITE)
             surface.blit(val_txt, (bar_x + bar_w + 2, rect.y + 4))
 

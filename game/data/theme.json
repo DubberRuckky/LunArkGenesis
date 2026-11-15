@@ -21,6 +21,12 @@
   },
   "ui": {
     "padding": 6,
+    "max_width_tooltip": 220,
+    "max_width_info": 260,
+    "max_width_dialogue": 420,
+    "max_width_banner": 360,
+    "max_width_card": 120,
+    "max_width_button": 160,
     "panel_bg": [20, 22, 32, 225],
     "panel_border": [90, 95, 115],
     "dialogue_bg": [14, 16, 24, 235],

@@ -642,27 +642,33 @@ class GameScreen:
             surface.blit(c_txt, (26, 26))
 
         elif self.event_manager.active_event:
-            # Event countdown banner
+            # Event countdown banner with optional event illustration
             ev = self.event_manager.active_event
             cd = self.event_manager.countdown
-
-            banner_w = 320
-            banner_h = 16
-            banner_x = (INTERNAL_WIDTH - banner_w) // 2
             banner_y = 25
 
-            b_surf = pygame.Surface((banner_w, banner_h), pygame.SRCALPHA)
-            b_surf.fill((160, 30, 30, 220))
-            surface.blit(b_surf, (banner_x, banner_y))
-            pygame.draw.rect(surface, COLOR_ERROR, pygame.Rect(banner_x, banner_y, banner_w, banner_h), 1)
-
-            w_icon = assets.get_icon(ICON.get("warning", 10))
-            surface.blit(w_icon, (banner_x + 2, banner_y))
-
+            ev_id = ev.get("id", "")
+            ev_img = assets.get_event_image(ev_id)
             ev_name = ev.get("name", "Hazard")
-            banner_txt = f"{ev_name.upper()} IN {cd}s! {ev.get('text', '')[:30]}"
-            t_render = self.small_font.render(banner_txt, False, (255, 255, 255))
-            surface.blit(t_render, (banner_x + 20, banner_y + 2))
+            banner_txt = f"{ev_name.upper()} IN {cd}s! {ev.get('text', '')}"
+
+            from game.ui.widgets import build_text_box
+            banner_box = build_text_box(
+                banner_txt,
+                self.small_font,
+                max_width=340,
+                bg_color=(160, 30, 30, 225),
+                padding=3,
+            )
+            banner_w = banner_box.get_width()
+            banner_x = (INTERNAL_WIDTH - banner_w) // 2
+            surface.blit(banner_box, (banner_x, banner_y))
+
+            if ev_img:
+                surface.blit(ev_img, (banner_x - ev_img.get_width() - 4, banner_y - 20))
+            else:
+                w_icon = assets.get_icon(ICON.get("warning", 10))
+                surface.blit(w_icon, (banner_x + 3, banner_y + 1))
 
         else:
             # Standard Goal Banner
@@ -698,7 +704,7 @@ class GameScreen:
             surface.blit(ghost_surf, (gx, gy))
             pygame.draw.rect(surface, border_color, pygame.Rect(gx, gy, gw, gh), 1)
 
-            lbl = self.small_font.render(b_def["name"][:10], False, COLOR_WHITE)
+            lbl = self.small_font.render(b_def["name"], False, COLOR_WHITE)
             surface.blit(lbl, (gx + 2, gy + 2))
 
             hint_txt = f"${cost}" if valid else reason
@@ -833,36 +839,46 @@ class GameScreen:
         bh: int,
     ) -> None:
         """Draw building sprite, regolith shielding, dust overlay, or broken sparks."""
-        b_surf = pygame.Surface((bw, bh))
-        if not b.is_active or b.is_broken:
-            b_surf.fill((40, 40, 45))
-            border_c = (90, 90, 100) if not b.is_broken else COLOR_ERROR
-            pygame.draw.rect(b_surf, border_c, b_surf.get_rect(), 1)
-        elif b.building_id == "habitat_pod":
-            b_surf.fill((50, 70, 95))
-            pygame.draw.rect(b_surf, (100, 140, 190), b_surf.get_rect(), 1)
-        elif "generator" in b.building_id or "fuel" in b.building_id or "solar" in b.building_id or "nuclear" in b.building_id:
-            b_surf.fill((80, 75, 45))
-            pygame.draw.rect(b_surf, (220, 200, 60), b_surf.get_rect(), 1)
-        elif "data" in b.building_id or "metal" in b.building_id or "helium" in b.building_id:
-            b_surf.fill((45, 75, 50))
-            pygame.draw.rect(b_surf, (80, 220, 80), b_surf.get_rect(), 1)
-        elif "gym" in b.building_id or "cafe" in b.building_id or "restaurant" in b.building_id:
-            b_surf.fill((75, 45, 75))
-            pygame.draw.rect(b_surf, (200, 80, 200), b_surf.get_rect(), 1)
+        anim_tick = int(getattr(self.clock, "total_ticks", 0))
+        b_sprite = assets.get_building_sprite(
+            b.building_id,
+            b.width,
+            b.height,
+            b.is_active and not b.is_broken,
+            anim_tick,
+        )
+        if b_sprite is not None:
+            b_surf = b_sprite.copy()
         else:
-            b_surf.fill((45, 65, 85))
-            pygame.draw.rect(b_surf, (80, 180, 255), b_surf.get_rect(), 1)
-
-        clean_name = b.building_id.replace("_", " ").title()[:bw // 7]
-        txt = self.small_font.render(clean_name, False, COLOR_WHITE)
-        b_surf.blit(txt, (2, 2))
+            b_surf = pygame.Surface((bw, bh))
+            if not b.is_active or b.is_broken:
+                b_surf.fill((40, 40, 45))
+                border_c = (90, 90, 100) if not b.is_broken else COLOR_ERROR
+                pygame.draw.rect(b_surf, border_c, b_surf.get_rect(), 1)
+            elif b.building_id == "habitat_pod":
+                b_surf.fill((50, 70, 95))
+                pygame.draw.rect(b_surf, (100, 140, 190), b_surf.get_rect(), 1)
+            elif "generator" in b.building_id or "fuel" in b.building_id or "solar" in b.building_id or "nuclear" in b.building_id:
+                b_surf.fill((80, 75, 45))
+                pygame.draw.rect(b_surf, (220, 200, 60), b_surf.get_rect(), 1)
+            elif "data" in b.building_id or "metal" in b.building_id or "helium" in b.building_id:
+                b_surf.fill((45, 75, 50))
+                pygame.draw.rect(b_surf, (80, 220, 80), b_surf.get_rect(), 1)
+            elif "gym" in b.building_id or "cafe" in b.building_id or "restaurant" in b.building_id:
+                b_surf.fill((75, 45, 75))
+                pygame.draw.rect(b_surf, (200, 80, 200), b_surf.get_rect(), 1)
+            else:
+                b_surf.fill((45, 65, 85))
+                pygame.draw.rect(b_surf, (80, 180, 255), b_surf.get_rect(), 1)
 
         # Status icon in corner
         if not b.is_active:
             off_icon = assets.get_icon(ICON.get("offline", 11))
             b_surf.blit(off_icon, (bw - 17, bh - 17))
         elif b.is_broken:
+            spark_fx = assets.get_fx("sparks", 16, 16, anim_tick)
+            if spark_fx:
+                b_surf.blit(spark_fx, (bw // 2 - 8, bh // 2 - 8))
             broken_icon = assets.get_icon(ICON.get("broken", 12))
             b_surf.blit(broken_icon, (bw - 17, bh - 17))
 
@@ -873,10 +889,14 @@ class GameScreen:
 
         # Dust overlay on solar panels
         if b.dust_level > 0:
-            dust_col = (140, 130, 110, 120 if b.dust_level == 1 else 190)
-            d_surf = pygame.Surface((bw, bh), pygame.SRCALPHA)
-            d_surf.fill(dust_col)
-            b_surf.blit(d_surf, (0, 0))
+            dust_fx = assets.get_fx("dust_puff", 16, 16, anim_tick)
+            if dust_fx:
+                b_surf.blit(dust_fx, (0, 0))
+            else:
+                dust_col = (140, 130, 110, 120 if b.dust_level == 1 else 190)
+                d_surf = pygame.Surface((bw, bh), pygame.SRCALPHA)
+                d_surf.fill(dust_col)
+                b_surf.blit(d_surf, (0, 0))
 
         surface.blit(b_surf, (bx, by))
 
@@ -909,8 +929,11 @@ class GameScreen:
         t_surf = self.small_font.render(f"{name} ({b.width}x{b.height})", False, (80, 180, 255))
         surface.blit(t_surf, (px + 6, py + 5))
 
-        d_surf = self.small_font.render(desc[:40], False, COLOR_WHITE)
-        surface.blit(d_surf, (px + 6, py + 19))
+        from game.ui.widgets import wrap_text_to_width
+        desc_lines = wrap_text_to_width(desc, self.small_font, max_width=248)
+        if desc_lines:
+            d_surf = self.small_font.render(desc_lines[0], False, COLOR_WHITE)
+            surface.blit(d_surf, (px + 6, py + 19))
 
         e_rate = b_def.get("energy_rate", 0)
         r_rate = b_def.get("revenue_rate", 0)
@@ -938,7 +961,7 @@ class GameScreen:
         shield_txt = " [Shielded]" if b.is_shielded else ""
         dust_txt = f" [Dust L{b.dust_level}]" if b.dust_level > 0 else ""
         broken_txt = " [BROKEN]" if b.is_broken else ""
-        cond_surf = self.small_font.render(f"Cond:{shield_txt}{dust_txt}{broken_txt}"[:30], False, (255, 200, 100))
+        cond_surf = self.small_font.render(f"Cond:{shield_txt}{dust_txt}{broken_txt}", False, (255, 200, 100))
         surface.blit(cond_surf, (px + 6, py + 52))
 
         # Button 1: Power ON/OFF Toggle

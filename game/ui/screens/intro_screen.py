@@ -108,6 +108,14 @@ class IntroScreen:
         self._show_glossary: bool = False
         self._glossary_scroll: int = 0
 
+        # Background GameScreen instance to render live game canvas behind dimmed overlay
+        self._bg_game_screen: object | None = None
+        try:
+            from game.ui.screens.game_screen import GameScreen
+            self._bg_game_screen = GameScreen(self.app)
+        except Exception:
+            self._bg_game_screen = None
+
         # Build persistent buttons (layout along bottom of dialogue box)
         btn_y = BOX_Y + BOX_H - 22
         self._btn_next = Button(
@@ -264,12 +272,16 @@ class IntroScreen:
         self._pulse_timer += dt
 
     def draw(self, surface: pygame.Surface) -> None:
-        # Dark lunar sky background
-        surface.fill((6, 6, 10))
-
-        # Procedural stars
-        for sx, sy in [(30, 20), (100, 55), (200, 30), (350, 70), (430, 25), (60, 90), (280, 48)]:
-            surface.set_at((sx, sy), (200, 200, 215))
+        if self._bg_game_screen is not None:
+            self._bg_game_screen.draw(surface)
+            dim_surf = pygame.Surface((INTERNAL_WIDTH, INTERNAL_HEIGHT), pygame.SRCALPHA)
+            dim_surf.fill((10, 12, 18, 175))
+            surface.blit(dim_surf, (0, 0))
+        else:
+            # Dark lunar sky background
+            surface.fill((6, 6, 10))
+            for sx, sy in [(30, 20), (100, 55), (200, 30), (350, 70), (430, 25), (60, 90), (280, 48)]:
+                surface.set_at((sx, sy), (200, 200, 215))
 
         info = self.tutorial.get_current_info()
         step = info.get("step", 0)
@@ -328,11 +340,14 @@ class IntroScreen:
 
         # -- "Press Space / Enter" hint --
         if not self._is_last_dialogue_line() or step == 0:
-            hint_col = (120, 125, 140)
+            hint_col = (130, 135, 150)
         else:
-            hint_col = (180, 185, 200)
+            hint_col = (190, 195, 210)
         hint_txt = self.small_font.render("SPACE or ENTER to continue", False, hint_col)
-        surface.blit(hint_txt, (inner_x, BOX_Y + BOX_H - 32))
+        # Position hint between Glossary and Next buttons without overlapping either
+        hint_x = (BOX_X + 140 + (INTERNAL_WIDTH - 90) - hint_txt.get_width()) // 2
+        hint_y = BOX_Y + BOX_H - 18
+        surface.blit(hint_txt, (hint_x, hint_y))
 
         # -- Buttons --
         self._btn_next.draw(surface)

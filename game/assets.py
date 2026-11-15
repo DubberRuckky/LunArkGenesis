@@ -26,32 +26,69 @@ from game.constants import (
 logger = logging.getLogger("lunark.assets")
 
 
+FRAME_ASSETS = {"bar_frame", "panel", "button", "dialogue_box", "toggle"}
+
+
 def create_placeholder(width: int, height: int, label: str) -> pygame.Surface:
-    """Create a labelled magenta placeholder surface for missing art.
+    """Create a labelled magenta placeholder or transparent-middle outline for frame assets.
+
+    Frame assets (bar_frame, panel, button, dialogue_box, toggle) get an outline
+    with an entirely transparent middle so underlying fills remain visible.
 
     Args:
         width: Surface width in pixels.
         height: Surface height in pixels.
-        label: Text to render inside the placeholder.
+        label: Asset identifier key.
 
     Returns:
-        pygame.Surface: Colored surface with centered text label.
+        pygame.Surface: Transparent-middle outline for frames, or magenta box with text label.
     """
-    surf = pygame.Surface((max(16, width), max(16, height)), pygame.SRCALPHA)
+    w = max(1, width)
+    h = max(1, height)
+    surf = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    if label in FRAME_ASSETS:
+        surf.fill((0, 0, 0, 0))  # Transparent middle
+        if label == "bar_frame":
+            # 12x10 bar frame with 3px corner: 1px outline, transparent center
+            pygame.draw.rect(surf, (140, 145, 165, 255), (0, 0, w, h), 1)
+        elif label == "button":
+            # 96x24: 4 states of 24x24 (normal, hover, pressed, disabled)
+            state_w = w // 4 if w >= 4 else w
+            border_cols = [
+                (110, 115, 130, 255),  # normal
+                (170, 175, 195, 255),  # hover
+                (255, 220, 50, 255),   # pressed
+                (70, 70, 80, 255),     # disabled
+            ]
+            for i in range(4):
+                col = border_cols[i] if i < len(border_cols) else (120, 120, 120, 255)
+                r = pygame.Rect(i * state_w, 0, state_w, h)
+                pygame.draw.rect(surf, col, r, 2)
+        elif label == "toggle":
+            # 48x12: 2 states of 24x12 (off, on)
+            half_w = w // 2
+            pygame.draw.rect(surf, (90, 95, 110, 255), (0, 0, half_w, h), 1)
+            pygame.draw.rect(surf, (100, 150, 240, 255), (half_w, 0, half_w, h), 1)
+            pygame.draw.circle(surf, (150, 155, 170, 255), (4, h // 2), 3)
+            pygame.draw.circle(surf, (255, 255, 255, 255), (half_w + half_w - 4, h // 2), 3)
+        elif label == "dialogue_box":
+            pygame.draw.rect(surf, (90, 110, 145, 255), (0, 0, w, h), 2)
+        else:  # panel
+            pygame.draw.rect(surf, (100, 105, 130, 255), (0, 0, w, h), 2)
+        return surf
+
+    # Non-frame placeholder: magenta box with label
+    surf = pygame.Surface((max(16, w), max(16, h)), pygame.SRCALPHA)
     surf.fill(COLOR_PLACEHOLDER)
-
-    # Inner border for visual definition
     pygame.draw.rect(surf, (220, 100, 220), surf.get_rect(), 1)
-
     try:
         font = pygame.font.Font(None, 12)
         text_surf = font.render(label[:16], False, COLOR_PLACEHOLDER_TEXT)
         rect = text_surf.get_rect(center=(surf.get_width() // 2, surf.get_height() // 2))
         surf.blit(text_surf, rect)
     except Exception:
-        # Fallback if font subsystem not yet ready
         pass
-
     return surf
 
 
@@ -259,6 +296,7 @@ class AssetManager:
             size = known_sizes.get(key, (32, 32))
             self.load_image(key, default_size=size)
 
+        self.init_cursor()
         self.print_missing_summary()
 
     def print_missing_summary(self) -> None:
@@ -303,6 +341,144 @@ class AssetManager:
         if 0 <= x + 16 <= sheet.get_width() and 0 <= y + 16 <= sheet.get_height():
             return sheet.subsurface(pygame.Rect(x, y, 16, 16))
         return create_placeholder(16, 16, f"t{index}")
+
+    def get_button_slices(self) -> list[Callable[[pygame.Surface, pygame.Rect], None]]:
+        """Return list of four 9-slice functions for normal, hover, pressed, disabled states."""
+        if hasattr(self, "_button_slices") and self._button_slices:
+            return self._button_slices
+
+        btn_sheet = self.load_image("button", default_size=(96, 24))
+        slices: list[Callable[[pygame.Surface, pygame.Rect], None]] = []
+        state_w = 24
+        corner = 8
+        for i in range(4):
+            x = i * state_w
+            if x + state_w <= btn_sheet.get_width():
+                sub = btn_sheet.subsurface(pygame.Rect(x, 0, state_w, 24)).copy()
+            else:
+                sub = create_placeholder(state_w, 24, "button")
+            slices.append(make_nine_slice(sub, corner=corner))
+
+        self._button_slices = slices
+        return slices
+
+    def get_building_sprite(
+        self,
+        building_id: str,
+        width_tiles: int,
+        height_tiles: int,
+        is_active: bool,
+        anim_tick: int = 0,
+    ) -> pygame.Surface | None:
+        """Load building sprite strip from img/buildings/<id>.png or return None if missing.
+
+        Frame size = footprint * 16 (width_tiles * 16, height_tiles * 16).
+        Frame 0 = offline; Frames 1..N = running animation.
+        """
+        img_file = IMG_DIR / "buildings" / f"{building_id}.png"
+        if not img_file.exists():
+            return None
+
+        key = f"bld_{building_id}"
+        if key not in self.images:
+            try:
+                raw_surf = pygame.image.load(str(img_file))
+                if pygame.display.get_surface() is not None:
+                    raw_surf = raw_surf.convert_alpha()
+                self.images[key] = raw_surf
+            except Exception as exc:
+                logger.warning("Failed loading building image %s: %s", img_file, exc)
+                return None
+
+        strip = self.images[key]
+        fw = width_tiles * 16
+        fh = height_tiles * 16
+        frames = load_sprite_strip(strip, fw, fh)
+        if not frames:
+            return None
+
+        if not is_active:
+            return frames[0]
+
+        if len(frames) > 1:
+            frame_idx = 1 + (anim_tick // 4) % (len(frames) - 1)
+            return frames[frame_idx]
+        return frames[0]
+
+    def get_fx(self, name: str, frame_w: int, frame_h: int, frame_idx: int) -> pygame.Surface | None:
+        """Load FX animation frame from img/fx/<name>.png or return None if missing."""
+        fx_file = IMG_DIR / "fx" / f"{name}.png"
+        if not fx_file.exists():
+            return None
+
+        key = f"fx_{name}"
+        if key not in self.images:
+            try:
+                raw_surf = pygame.image.load(str(fx_file))
+                if pygame.display.get_surface() is not None:
+                    raw_surf = raw_surf.convert_alpha()
+                self.images[key] = raw_surf
+            except Exception as exc:
+                logger.warning("Failed loading fx %s: %s", fx_file, exc)
+                return None
+
+        frames = load_sprite_strip(self.images[key], frame_w, frame_h)
+        if not frames:
+            return None
+        return frames[frame_idx % len(frames)]
+
+    def get_event_image(self, event_id: str) -> pygame.Surface | None:
+        """Load event alert illustration from img/events/<event_id>.png or return None."""
+        ev_file = IMG_DIR / "events" / f"{event_id}.png"
+        if not ev_file.exists():
+            return None
+
+        key = f"ev_{event_id}"
+        if key not in self.images:
+            try:
+                raw_surf = pygame.image.load(str(ev_file))
+                if pygame.display.get_surface() is not None:
+                    raw_surf = raw_surf.convert_alpha()
+                self.images[key] = raw_surf
+            except Exception as exc:
+                logger.warning("Failed loading event image %s: %s", ev_file, exc)
+                return None
+        return self.images[key]
+
+    def get_next_arrow(self, blink_tick: int) -> pygame.Surface | None:
+        """Load blinking advance prompt from img/ui/next_arrow.png or return None."""
+        arrow_file = IMG_DIR / "ui" / "next_arrow.png"
+        if not arrow_file.exists():
+            return None
+
+        key = "next_arrow_surf"
+        if key not in self.images:
+            try:
+                raw_surf = pygame.image.load(str(arrow_file))
+                if pygame.display.get_surface() is not None:
+                    raw_surf = raw_surf.convert_alpha()
+                self.images[key] = raw_surf
+            except Exception:
+                return None
+
+        frames = load_sprite_strip(self.images[key], 8, 8)
+        if not frames:
+            return None
+        return frames[(blink_tick // 15) % len(frames)]
+
+    def init_cursor(self) -> None:
+        """Initialize custom mouse cursor from img/ui/cursor.png if present."""
+        cursor_file = IMG_DIR / "ui" / "cursor.png"
+        if not cursor_file.exists():
+            return
+        try:
+            cur_surf = pygame.image.load(str(cursor_file)).convert_alpha()
+            # 32x16 contains 2 frames: (0, 0, 16, 16) normal, (16, 0, 16, 16) pointing
+            normal_frame = cur_surf.subsurface(pygame.Rect(0, 0, 16, 16))
+            cursor = pygame.cursors.Cursor((0, 0), normal_frame)
+            pygame.mouse.set_cursor(cursor)
+        except Exception as exc:
+            logger.debug("Custom cursor initialization skipped: %s", exc)
 
 
 # Global singleton instance
